@@ -80,20 +80,20 @@
 
   /* === SPEED READOUTS === */
   #readouts { text-align: center; width: 100%; padding: 0 20px; margin-top: -8px; }
-  #kmh-display {
+  #smoot-val {
     font-size: clamp(64px, 18vw, 88px); font-weight: 700;
-    color: var(--text); line-height: 1; letter-spacing: -2px;
+    color: var(--accent2); line-height: 1; letter-spacing: -2px;
     font-variant-numeric: tabular-nums;
     transition: color 0.3s;
   }
-  #kmh-display.speeding { color: var(--danger); }
-  #kmh-unit { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--muted); letter-spacing: 3px; margin-top: 2px; }
-  #smoot-row {
+  #smoot-val.speeding { color: var(--danger); }
+  #smoot-unit { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--muted); letter-spacing: 3px; margin-top: 2px; }
+  #smoot-note { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 3px; text-align: center; }
+  #kmh-row {
     margin-top: 12px; display: flex; align-items: baseline; justify-content: center; gap: 8px;
   }
-  #smoot-val { font-size: 28px; font-weight: 600; color: var(--accent2); letter-spacing: 1px; }
-  #smoot-unit { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; }
-  #smoot-note { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 3px; text-align: center; }
+  #kmh-display { font-size: 28px; font-weight: 600; color: var(--text); letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+  #kmh-unit { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; }
 
   /* === STATS ROW === */
   #stats-row {
@@ -172,7 +172,7 @@
     <circle cx="30" cy="30" r="3" fill="#f5a623"/>
   </svg>
   <h1>Speedo</h1>
-  <p>GPS SPEEDOMETER<br>KM/H &amp; SMOOTS/H<br>WITH GPX EXPORT</p>
+  <p>GPS SPEEDOMETER</p>
   <button id="splash-btn">INITIALISE</button>
 </div>
 
@@ -233,11 +233,11 @@
 
   <!-- SPEED READOUTS -->
   <div id="readouts">
-    <div id="kmh-display">0.0</div>
-    <div id="kmh-unit">KM / H</div>
-    <div id="smoot-row">
-      <div id="smoot-val">0.0</div>
-      <div id="smoot-unit">SMOOTS / H</div>
+    <div id="smoot-val">0.0</div>
+    <div id="smoot-unit">SMOOTS / H</div>
+    <div id="kmh-row">
+      <div id="kmh-display">0.0</div>
+      <div id="kmh-unit">KM / H</div>
     </div>
     <div id="smoot-note">1 smoot = 1.7018 m &nbsp;·&nbsp; Oliver Smoot, MIT 1958</div>
   </div>
@@ -404,7 +404,7 @@ function updateSpeed(kmh) {
   const sm = kmhToSmoot(kmh).toFixed(1);
   $kmhDisp.textContent = s;
   $smootVal.textContent = sm;
-  $kmhDisp.classList.toggle('speeding', kmh >= 130);
+  $smootVal.classList.toggle('speeding', kmh >= 130);
   setNeedle(kmh);
 
   if (kmh > maxKmh) {
