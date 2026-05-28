@@ -2,721 +2,782 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SMOOT SPEEDO">
-<title>CyberSmoot</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@200;300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+<title>SMOOT/H — STO Speedometer</title>
 <style>
-:root {
-  --bg:       #05070a;
-  --dial:     #090c10;
-  --bezel:    #1a1f26;
-  --silver:   #c8d4de;
-  --silver2:  #8a9aaa;
-  --white:    #eef4fa;
-  --needle:   #e8f0f8;
-  --tip:      #ff5500;
-  --tip-glow: rgba(255,85,0,0.6);
-  --blue:     #4aa8ff;
-  --blue-dim: rgba(74,168,255,0.15);
-  --amber:    #ffb020;
-  --red:      #ff3030;
-  --text:     #c0ccd8;
-  --muted:    rgba(192,204,216,0.35);
-  --star-slow:#a0c8e8;
-  --star-fast:#ffffff;
-}
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap');
 
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:'Titillium Web',sans-serif; }
+  :root {
+    --bg: #020408;
+    --accent: #ff6a00;
+    --accent2: #ffb300;
+    --accent-glow: rgba(255,106,0,0.6);
+    --cyan: #00e5ff;
+    --cyan-glow: rgba(0,229,255,0.4);
+    --white: #f0f4ff;
+    --dim: #3a4a5a;
+  }
 
-/* ─── STARFIELD ─── */
-#stars { position:fixed; inset:0; z-index:0; }
+  * { margin:0; padding:0; box-sizing:border-box; }
 
-/* ─── VIGNETTE ─── */
-#vignette {
-  position:fixed; inset:0; z-index:1; pointer-events:none;
-  background:radial-gradient(ellipse 90% 90% at 50% 50%, transparent 40%, rgba(5,7,10,0.92) 100%);
-}
+  html, body {
+    width:100%; height:100%;
+    background:var(--bg);
+    overflow:hidden;
+    font-family:'Rajdhani',sans-serif;
+    touch-action:none;
+    user-select:none;
+  }
 
-/* ─── SPLASH ─── */
-#splash {
-  position:fixed; inset:0; z-index:200;
-  background:var(--bg);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
-}
-.splash-logo {
-  display:flex; flex-direction:column; align-items:center; gap:6px;
-}
-.splash-l-line {
-  width:1px; height:40px;
-  background:linear-gradient(180deg, transparent, var(--silver2));
-}
-.splash-l-line.bot {
-  background:linear-gradient(180deg, var(--silver2), transparent);
-}
-.splash-wordmark {
-  font-size:11px; font-weight:300; letter-spacing:12px; color:var(--silver2);
-  text-transform:uppercase;
-}
-.splash-model {
-  font-size:52px; font-weight:200; letter-spacing:6px;
-  color:var(--white);
-  text-shadow:0 0 40px rgba(200,212,222,0.25);
-  line-height:1;
-}
-.splash-sub {
-  font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:3px;
-  color:var(--muted); text-align:center; line-height:2.2;
-}
-#splash-btn {
-  margin-top:8px; padding:13px 48px;
-  background:transparent;
-  border:1px solid var(--silver2);
-  color:var(--silver); font-family:'Titillium Web',sans-serif;
-  font-size:11px; font-weight:300; letter-spacing:8px; text-transform:uppercase;
-  cursor:pointer; transition:border-color 0.25s, color 0.25s, background 0.25s;
-}
-#splash-btn:active { background:var(--silver2); color:var(--bg); border-color:var(--silver2); }
+  /* ── STARFIELD ── */
+  #starfield {
+    position:fixed; inset:0;
+    pointer-events:none;
+    z-index:0;
+  }
 
-/* ─── APP ─── */
-#app {
-  display:none; position:relative; z-index:10;
-  flex-direction:column; align-items:center;
-  height:100%;
-  padding:env(safe-area-inset-top,14px) 0 env(safe-area-inset-bottom,10px);
-}
+  /* ── LAYOUT ── */
+  #app {
+    position:relative;
+    width:100vw; height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    z-index:1;
+  }
 
-/* ─── STATUS BAR ─── */
-#status-bar {
-  width:100%; display:flex; align-items:center; justify-content:space-between;
-  padding:6px 22px;
-  font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:2px; color:var(--muted);
-}
-#gps-row { display:flex; align-items:center; gap:7px; }
-#gps-dot {
-  width:6px; height:6px; border-radius:50%; background:var(--muted);
-  transition:background 0.4s, box-shadow 0.4s;
-}
-#gps-dot.ok   { background:#50e898; box-shadow:0 0 6px #50e898; }
-#gps-dot.warn { background:var(--amber); box-shadow:0 0 6px var(--amber); }
-#gps-dot.bad  { background:var(--red);   box-shadow:0 0 6px var(--red); }
-#clock-val { letter-spacing:3px; }
+  #speedo-wrap {
+    position:relative;
+    width:min(88vh, 64vw);
+    aspect-ratio:1;
+    filter:drop-shadow(0 0 40px rgba(255,106,0,0.15));
+  }
 
-/* ─── GAUGE CONTAINER ─── */
-#gauge-area {
-  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-  width:100%; padding-top:4px;
-}
+  #speedo-svg { width:100%; height:100%; overflow:visible; }
 
-/* ─── GAUGE WRAP ─── */
-#gauge-wrap { position:relative; width:min(92vw,360px); }
-#gauge-svg  { width:100%; height:auto; display:block; overflow:visible; }
+  /* ── SIDE PANELS ── */
+  .side-panel {
+    position:absolute;
+    top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:10px;
+    z-index:2;
+  }
+  #panel-left  { right:calc(100% + 14px); align-items:flex-end; }
+  #panel-right { left:calc(100% + 14px);  align-items:flex-start; }
 
-/* ─── READOUTS (below gauge) ─── */
-#readouts {
-  display:flex; flex-direction:column; align-items:center;
-  margin-top:2px; width:100%; gap:0;
-}
+  .data-block {
+    background:linear-gradient(135deg,rgba(6,12,20,.95),rgba(10,21,32,.9));
+    border:1px solid rgba(0,229,255,.2);
+    border-radius:4px;
+    padding:7px 12px;
+    min-width:108px;
+    position:relative; overflow:hidden;
+  }
+  .data-block::before {
+    content:''; position:absolute;
+    left:0; top:0; bottom:0; width:3px;
+    background:var(--accent);
+  }
+  .data-label {
+    font-family:'Rajdhani',sans-serif;
+    font-size:9px; font-weight:600;
+    letter-spacing:2px; color:var(--dim);
+    text-transform:uppercase;
+  }
+  .data-value {
+    font-family:'Orbitron',monospace;
+    font-size:17px; font-weight:700;
+    color:var(--cyan);
+    text-shadow:0 0 12px var(--cyan-glow);
+    line-height:1.1;
+  }
+  .data-unit {
+    font-family:'Rajdhani',sans-serif;
+    font-size:9px; font-weight:600;
+    color:var(--accent); letter-spacing:1px;
+  }
 
-/* Smoots — primary large */
-#smoot-num {
-  font-size:clamp(68px,19vw,96px); font-weight:200; line-height:1;
-  letter-spacing:-1px; font-variant-numeric:tabular-nums;
-  color:var(--white);
-  transition:color 0.35s;
-}
-#smoot-num.warn   { color:var(--amber); }
-#smoot-num.danger { color:var(--red); }
-#smoot-label {
-  font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:6px;
-  color:var(--muted); margin-top:-2px;
-}
+  /* ── TOP BAR ── */
+  #top-bar {
+    position:fixed; top:0; left:0; right:0; height:34px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 18px;
+    background:linear-gradient(to bottom,rgba(2,4,8,.92),transparent);
+    z-index:5;
+  }
+  #wordmark {
+    font-family:'Orbitron',monospace;
+    font-size:11px; font-weight:900; letter-spacing:6px;
+    color:var(--accent); text-shadow:0 0 12px var(--accent-glow);
+  }
+  #model-tag {
+    font-family:'Rajdhani',sans-serif;
+    font-size:10px; font-weight:600;
+    letter-spacing:4px; color:var(--dim); text-transform:uppercase;
+  }
 
-/* thin rule */
-#rule {
-  width:180px; height:1px; margin:8px 0 7px;
-  background:linear-gradient(90deg, transparent, var(--silver2), transparent);
-  opacity:0.3;
-}
+  /* ── CORNERS ── */
+  .corner { position:fixed; width:56px; height:56px; z-index:2; opacity:.4; }
+  .corner svg { width:100%; height:100%; }
+  .tl { top:10px; left:10px; }
+  .tr { top:10px; right:10px; transform:scaleX(-1); }
+  .bl { bottom:56px; left:10px; transform:scaleY(-1); }
+  .br { bottom:56px; right:10px; transform:scale(-1); }
 
-/* km/h — secondary */
-#kmh-row { display:flex; align-items:baseline; gap:8px; }
-#kmh-num {
-  font-size:30px; font-weight:300; color:var(--silver2);
-  font-variant-numeric:tabular-nums; letter-spacing:1px;
-}
-#kmh-label {
-  font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:3px; color:var(--muted);
-}
-#smoot-note {
-  font-family:'Share Tech Mono',monospace; font-size:9px;
-  color:rgba(192,204,216,0.18); letter-spacing:2px; margin-top:6px; text-align:center;
-}
+  /* ── GPS STATUS ── */
+  #gps-status {
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    z-index:10;
+  }
+  #gps-pill {
+    display:flex; align-items:center; gap:8px;
+    background:rgba(6,12,20,.92);
+    border:1px solid rgba(0,229,255,.25);
+    border-radius:20px; padding:6px 16px;
+  }
+  #gps-dot {
+    width:8px; height:8px; border-radius:50%;
+    background:#3a4a5a; flex-shrink:0;
+    transition:background .4s;
+  }
+  #gps-dot.searching { background:#ffb300; animation:pulse-dot 1s infinite; }
+  #gps-dot.active    { background:#00e5ff; box-shadow:0 0 8px #00e5ff; }
+  #gps-dot.error     { background:#ff1a1a; }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.2} }
+  #gps-label {
+    font-family:'Rajdhani',sans-serif;
+    font-size:10px; font-weight:600;
+    letter-spacing:3px; color:var(--dim);
+    text-transform:uppercase; white-space:nowrap;
+  }
+  #gps-accuracy {
+    font-family:'Orbitron',monospace;
+    font-size:9px; color:var(--dim); letter-spacing:1px;
+  }
 
-/* ─── STATS ─── */
-#stats-row {
-  display:flex; gap:0; width:100%; padding:10px 18px 0; justify-content:center;
-}
-.s-card {
-  flex:1; max-width:120px; text-align:center; padding:8px 6px;
-  border-top:1px solid rgba(200,212,222,0.08);
-  position:relative;
-}
-.s-card + .s-card::before {
-  content:''; position:absolute; left:0; top:20%; bottom:20%;
-  width:1px; background:rgba(200,212,222,0.08);
-}
-.s-lbl {
-  font-family:'Share Tech Mono',monospace; font-size:8px; letter-spacing:3px;
-  color:var(--muted); text-transform:uppercase;
-}
-.s-val {
-  font-size:20px; font-weight:300; color:var(--silver); margin-top:2px;
-  font-variant-numeric:tabular-nums;
-}
-.s-sub {
-  font-family:'Share Tech Mono',monospace; font-size:8px; color:rgba(74,168,255,0.5);
-  margin-top:1px; letter-spacing:1px;
-}
+  /* ── STARTUP OVERLAY ── */
+  #startup-overlay {
+    position:fixed; inset:0; z-index:200;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    background:#020408;
+    transition:opacity .7s ease;
+  }
+  #startup-overlay.fade-out { opacity:0; pointer-events:none; }
 
-/* ─── UNIT TOGGLE ─── */
-#unit-toggle {
-  margin-top:14px;
-  padding:8px 28px;
-  background:transparent;
-  border:1px solid rgba(200,212,222,0.2);
-  color:var(--silver2);
-  font-family:'Share Tech Mono',monospace;
-  font-size:9px; font-weight:400; letter-spacing:5px;
-  text-transform:uppercase; cursor:pointer;
-  transition:border-color 0.25s, color 0.25s, background 0.25s;
-}
-#unit-toggle:active,
-#unit-toggle.active {
-  background:rgba(74,168,255,0.12);
-  border-color:var(--blue);
-  color:var(--blue);
-}
+  #startup-logo {
+    font-family:'Orbitron',monospace;
+    font-size:clamp(20px,5vw,36px); font-weight:900;
+    letter-spacing:10px; color:#ff6a00;
+    text-shadow:0 0 30px rgba(255,106,0,.9),0 0 80px rgba(255,106,0,.3);
+    opacity:0; transform:scale(.88);
+    transition:opacity .45s ease, transform .45s ease;
+  }
+  #startup-logo.show { opacity:1; transform:scale(1); }
 
-#geo-error {
-  display:none; width:100%; padding:8px 20px; text-align:center;
-  font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:1px;
-  color:var(--red); line-height:1.8;
-}
+  #startup-sub {
+    font-family:'Rajdhani',sans-serif;
+    font-size:clamp(9px,2vw,13px); font-weight:600;
+    letter-spacing:6px; color:#3a4a5a;
+    margin-top:10px; opacity:0;
+    text-transform:uppercase;
+    transition:opacity .45s ease .2s;
+  }
+  #startup-sub.show { opacity:1; }
 
-/* ─── LFA BOOT SWEEP ─── */
-@keyframes lfa-sweep {
-  0%   { transform:rotate(var(--a-start)) }
-  30%  { transform:rotate(var(--a-end)) }
-  55%  { transform:rotate(calc(var(--a-end) - 20deg)) }
-  75%  { transform:rotate(var(--a-end)) }
-  100% { transform:rotate(var(--a-start)) }
-}
-.lfa-booting #needle-grp {
-  animation:lfa-sweep 1.6s cubic-bezier(.4,0,.2,1) forwards;
-}
+  #startup-line {
+    width:0; height:1px; margin-top:20px;
+    background:linear-gradient(to right,transparent,#ff6a00,transparent);
+    transition:width .7s ease .3s;
+  }
+  #startup-line.show { width:clamp(160px,28vw,280px); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes redline-pulse { 0%,100%{opacity:1} 50%{opacity:.15} }
+  .redline-active { animation:redline-pulse .28s infinite; }
 </style>
 </head>
 <body>
 
-<canvas id="stars"></canvas>
-<div id="vignette"></div>
-
-<!-- ═══ SPLASH ═══ -->
-<div id="splash">
-  <div class="splash-logo">
-    <div class="splash-l-line"></div>
-    <div class="splash-wordmark">CYBER</div>
-    <div class="splash-model">SMOOT</div>
-    <div class="splash-wordmark">Speedometer</div>
-    <div class="splash-l-line bot"></div>
-  </div>
-  <div class="splash-sub">SMOOTS / S &nbsp;·&nbsp; KM / H<br>GPS PRECISION INSTRUMENT</div>
-  <button id="splash-btn">START ENGINE</button>
+<!-- Startup overlay: sits above everything, fades out after sweep -->
+<div id="startup-overlay">
+  <div id="startup-logo">SMOOT/H</div>
+  <div id="startup-sub">Velocity Interface</div>
+  <div id="startup-line"></div>
 </div>
 
-<!-- ═══ APP ═══ -->
+<canvas id="starfield"></canvas>
+
+<div id="top-bar">
+  <div id="wordmark">SMOOT/H</div>
+  <div id="model-tag">GPS</div>
+</div>
+
+<div class="corner tl"><svg viewBox="0 0 60 60"><polyline points="0,60 0,0 60,0" stroke="#00e5ff" stroke-width="1.5" fill="none"/><polyline points="10,60 10,10 60,10" stroke="#00e5ff" stroke-width="0.5" fill="none" opacity="0.4"/></svg></div>
+<div class="corner tr"><svg viewBox="0 0 60 60"><polyline points="0,60 0,0 60,0" stroke="#00e5ff" stroke-width="1.5" fill="none"/><polyline points="10,60 10,10 60,10" stroke="#00e5ff" stroke-width="0.5" fill="none" opacity="0.4"/></svg></div>
+<div class="corner bl"><svg viewBox="0 0 60 60"><polyline points="0,60 0,0 60,0" stroke="#ff6a00" stroke-width="1.5" fill="none"/></svg></div>
+<div class="corner br"><svg viewBox="0 0 60 60"><polyline points="0,60 0,0 60,0" stroke="#ff6a00" stroke-width="1.5" fill="none"/></svg></div>
+
 <div id="app">
+  <div id="speedo-wrap">
 
-  <div id="status-bar">
-    <div id="gps-row">
-      <div id="gps-dot"></div>
-      <span id="gps-text">ACQUIRING</span>
+    <div class="side-panel" id="panel-left">
+      <div class="data-block">
+        <div class="data-label">Smoot/H</div>
+        <div class="data-value" id="val-smoot">0.00</div>
+      </div>
+      <div class="data-block">
+        <div class="data-label">km/h</div>
+        <div class="data-value" id="val-kmh">0.0</div>
+      </div>
+      <div class="data-block">
+        <div class="data-label">mph</div>
+        <div class="data-value" id="val-mph">0.0</div>
+      </div>
     </div>
-    <span id="clock-val">--:--</span>
+
+    <div class="side-panel" id="panel-right">
+      <div class="data-block">
+        <div class="data-label">Peak</div>
+        <div class="data-value" id="val-peak">0.00</div>
+        <div class="data-unit">SMOOT/H</div>
+      </div>
+      <div class="data-block">
+        <div class="data-label">Mode</div>
+        <div class="data-value" id="val-mode" style="font-size:13px;color:var(--accent)">STRADA</div>
+      </div>
+      <div class="data-block">
+        <div class="data-label">Accuracy</div>
+        <div class="data-value" id="val-acc" style="font-size:13px">—</div>
+        <div class="data-unit">METRES</div>
+      </div>
+    </div>
+
+    <!--
+      SVG NEEDLE DESIGN NOTE
+      ======================
+      The dial spans START_ANG=-225° to END_ANG=45° (270° sweep), measured
+      clockwise from 12-o'clock (SVG convention: 0°=top, CW positive).
+
+      updateDial() computes:  dialAngle = START_ANG + (speed/MAX)*270
+        At speed=0  → dialAngle = -225°  (bottom-left, ~7-o'clock)
+        At speed=MAX→ dialAngle =   45°  (bottom-right, ~5-o'clock)
+
+      The needle polygon is drawn pointing UPWARD in local space (tip at y=88,
+      pivot at cx=250,cy=250). We apply:
+        transform="rotate(dialAngle, 250, 250)"
+      so at dialAngle=-225 the needle points to bottom-left. ✓
+    -->
+    <svg id="speedo-svg" viewBox="0 0 500 500">
+      <defs>
+        <pattern id="carbon" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+          <rect width="8" height="8" fill="#050a10"/>
+          <rect width="4" height="4" fill="#070e16"/>
+          <rect x="4" y="4" width="4" height="4" fill="#070e16"/>
+        </pattern>
+        <radialGradient id="dialFace" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="#0d1a28"/>
+          <stop offset="70%"  stop-color="#060c14"/>
+          <stop offset="100%" stop-color="#020408"/>
+        </radialGradient>
+        <linearGradient id="needleGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.9"/>
+          <stop offset="40%"  stop-color="#ffb300"/>
+          <stop offset="100%" stop-color="#ff6a00"/>
+        </linearGradient>
+        <filter id="glow3" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow8" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="8"/>
+        </filter>
+        <filter id="glowNeedle" x="-80%" y="-20%" width="260%" height="140%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Outer bezel -->
+      <circle cx="250" cy="250" r="245" fill="#0a0f18" stroke="#1a2535" stroke-width="2"/>
+      <circle cx="250" cy="250" r="242" fill="url(#carbon)"/>
+      <circle cx="250" cy="250" r="235" fill="none" stroke="#ff6a00" stroke-width="1.5" opacity="0.6"/>
+      <circle cx="250" cy="250" r="232" fill="none" stroke="#00e5ff" stroke-width="0.5" opacity="0.3"/>
+      <circle cx="250" cy="250" r="226" fill="url(#dialFace)"/>
+
+      <!-- Arc tracks -->
+      <path id="arcTrackBg" fill="none" stroke="#0a1520"  stroke-width="22" stroke-linecap="butt"/>
+      <path id="arcYellow"  fill="none" stroke="#ffb300"  stroke-width="22" stroke-linecap="butt" opacity="0.3"/>
+      <path id="arcRed"     fill="none" stroke="#ff1a1a"  stroke-width="22" stroke-linecap="butt" opacity="0.35"/>
+      <path id="arcActive"  fill="none" stroke="#ff6a00"  stroke-width="22" stroke-linecap="butt"/>
+      <path id="arcGlow"    fill="none" stroke="#ff6a00"  stroke-width="32" stroke-linecap="butt" opacity="0.18" filter="url(#glow8)"/>
+
+      <!-- Tick marks & labels -->
+      <g id="ticks"></g>
+      <g id="tickLabels"></g>
+
+      <!-- Hub glow halo -->
+      <circle cx="250" cy="250" r="60" fill="none" stroke="#ff6a00" stroke-width="1" opacity="0.15" filter="url(#glow8)"/>
+
+      <!-- Inner hub -->
+      <circle cx="250" cy="250" r="58" fill="#03080f" stroke="#0d1e30" stroke-width="1"/>
+      <circle cx="250" cy="250" r="50" fill="#060c14" stroke="#ff6a00" stroke-width="0.5" opacity="0.4"/>
+
+      <!--
+        NEEDLE — drawn pointing UP in local space.
+        Pivot = (250,250). Tip at (250,88). Tail at (250,278).
+        rotate(dialAngle, 250,250) swings tip to the right speed position.
+      -->
+      <g id="needleGlow" transform="rotate(-225, 250, 250)">
+        <line x1="250" y1="90" x2="250" y2="260"
+              stroke="#ff6a00" stroke-width="10" stroke-linecap="round"
+              opacity="0.3" filter="url(#glow8)"/>
+      </g>
+      <g id="needle" transform="rotate(-225, 250, 250)">
+        <!-- tail counterweight -->
+        <rect x="247.5" y="258" width="5" height="22" rx="2.5"
+              fill="#ff6a00" opacity="0.55"/>
+        <!-- main blade: narrow triangle pointing UP -->
+        <polygon points="250,90  253.5,250  246.5,250"
+                 fill="url(#needleGrad)" filter="url(#glowNeedle)"/>
+        <!-- bright tip highlight -->
+        <polygon points="250,90  251.2,135  248.8,135"
+                 fill="white" opacity="0.75"/>
+        <!-- hub cap -->
+        <circle cx="250" cy="250" r="11" fill="#ff6a00" stroke="#ffb300" stroke-width="1.5"/>
+        <circle cx="250" cy="250" r="5.5" fill="#fff" opacity="0.85"/>
+      </g>
+
+      <!-- Digital readout box -->
+      <rect x="175" y="308" width="150" height="56" rx="4"
+            fill="#03080f" stroke="#1a2535" stroke-width="1"/>
+      <rect x="176" y="309" width="3" height="54" rx="1" fill="#ff6a00"/>
+      <text id="speedText" x="252" y="347" text-anchor="middle"
+            font-family="Orbitron,monospace" font-size="28" font-weight="900"
+            fill="#f0f4ff" filter="url(#glow3)">0.00</text>
+      <text x="252" y="375" text-anchor="middle"
+            font-family="Rajdhani,sans-serif" font-size="11" font-weight="600"
+            letter-spacing="3" fill="#ff6a00">SMOOT / H</text>
+
+      <!-- Model badge -->
+      <text x="250" y="200" text-anchor="middle"
+            font-family="Orbitron,monospace" font-size="11" font-weight="700"
+            letter-spacing="5" fill="#1a2535">Smoot Tuning Option</text>
+
+      <!-- Redline label -->
+      <text id="redlineText" x="250" y="422" text-anchor="middle"
+            font-family="Orbitron,monospace" font-size="10" font-weight="700"
+            letter-spacing="3" fill="#ff1a1a" opacity="0">REDLINE</text>
+    </svg>
   </div>
+</div>
 
-  <div id="gauge-area">
-
-    <!-- ═══ GAUGE SVG ═══ -->
-    <div id="gauge-wrap">
-      <svg id="gauge-svg" viewBox="0 0 380 240" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <!-- Dial face radial gradient -->
-          <radialGradient id="dial-grad" cx="50%" cy="55%" r="52%">
-            <stop offset="0%"   stop-color="#111620"/>
-            <stop offset="60%"  stop-color="#0c1016"/>
-            <stop offset="100%" stop-color="#06080c"/>
-          </radialGradient>
-
-          <!-- Needle glow filter -->
-          <filter id="needle-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-          <!-- Subtle glow for active arc -->
-          <filter id="arc-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="2.5" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-          <!-- Tip glow -->
-          <filter id="tip-glow" x="-200%" y="-200%" width="500%" height="500%">
-            <feGaussianBlur stdDeviation="5" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-
-          <!-- live arc gradient: blue → white → amber → red -->
-          <linearGradient id="live-grad" gradientUnits="userSpaceOnUse" x1="20" y1="190" x2="360" y2="190">
-            <stop offset="0%"   stop-color="#4aa8ff"/>
-            <stop offset="50%"  stop-color="#c8d4de"/>
-            <stop offset="78%"  stop-color="#ffb020"/>
-            <stop offset="100%" stop-color="#ff3030"/>
-          </linearGradient>
-
-          <!-- Bezel gradient -->
-          <linearGradient id="bezel-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stop-color="#2a3240"/>
-            <stop offset="40%"  stop-color="#1a2030"/>
-            <stop offset="100%" stop-color="#0e1420"/>
-          </linearGradient>
-        </defs>
-
-        <!-- OUTER BEZEL RING -->
-        <circle cx="190" cy="190" r="178" fill="url(#bezel-grad)" stroke="#0e1420" stroke-width="1"/>
-        <!-- bezel highlight line -->
-        <circle cx="190" cy="190" r="176" fill="none" stroke="rgba(200,212,222,0.08)" stroke-width="0.5"/>
-        <!-- inner bezel shadow -->
-        <circle cx="190" cy="190" r="170" fill="none" stroke="rgba(0,0,0,0.6)" stroke-width="4"/>
-
-        <!-- DIAL FACE -->
-        <circle cx="190" cy="190" r="166" fill="url(#dial-grad)"/>
-
-        <!-- OUTER TICK RING (decorative) -->
-        <circle cx="190" cy="190" r="158" fill="none" stroke="rgba(200,212,222,0.06)" stroke-width="0.5"/>
-
-        <!-- ZONE ARCS — subtle background colour bands -->
-        <!-- green 0–80 -->
-        <path id="zone-g" fill="none" stroke="rgba(80,232,152,0.06)" stroke-width="12" stroke-linecap="butt"/>
-        <!-- amber 80–130 -->
-        <path id="zone-y" fill="none" stroke="rgba(255,176,32,0.06)"  stroke-width="12" stroke-linecap="butt"/>
-        <!-- red 130–200 -->
-        <path id="zone-r" fill="none" stroke="rgba(255,48,48,0.06)"   stroke-width="12" stroke-linecap="butt"/>
-
-        <!-- LIVE ARC (fills with speed) -->
-        <path id="arc-live" fill="none" stroke="url(#live-grad)" stroke-width="3"
-              stroke-linecap="round" opacity="0" filter="url(#arc-glow)"/>
-
-        <!-- TICK MARKS -->
-        <g id="ticks"></g>
-
-        <!-- SPEED LABELS -->
-        <g id="spd-labels" font-family="'Titillium Web',sans-serif" font-size="11"
-           font-weight="300" fill="rgba(200,212,222,0.7)" text-anchor="middle"></g>
-
-        <!-- INNER RING — LFA-style concentric detail -->
-        <circle cx="190" cy="190" r="72" fill="none" stroke="rgba(200,212,222,0.05)" stroke-width="0.5"/>
-        <circle cx="190" cy="190" r="52" fill="none" stroke="rgba(200,212,222,0.04)" stroke-width="0.5"/>
-
-        <!-- NEEDLE GROUP — pivots at cx=190,cy=190 -->
-        <g id="needle-grp" style="transform-origin:190px 190px; transform:rotate(-145deg); transition:transform 120ms cubic-bezier(0.25,0.46,0.45,0.94);">
-          <!-- main needle shaft — long, slim, white -->
-          <polygon points="190,48 192,185 190,192 188,185"
-                   fill="url(#needle-fill)" opacity="0.95"/>
-          <!-- needle glow layer -->
-          <line x1="190" y1="52" x2="190" y2="185"
-                stroke="rgba(232,240,248,0.15)" stroke-width="4" stroke-linecap="round"
-                filter="url(#needle-glow)"/>
-          <!-- crisp white needle -->
-          <line x1="190" y1="52" x2="190" y2="185"
-                stroke="#dce8f4" stroke-width="1.2" stroke-linecap="round"/>
-          <!-- tip — LFA orange/red accent -->
-          <line x1="190" y1="48" x2="190" y2="90"
-                stroke="#ff5500" stroke-width="2" stroke-linecap="round"
-                filter="url(#tip-glow)"/>
-          <!-- counter-weight -->
-          <line x1="190" y1="192" x2="190" y2="214"
-                stroke="rgba(200,212,222,0.3)" stroke-width="2" stroke-linecap="round"/>
-        </g>
-
-        <!-- Define needle gradient (must be after group for correct coord space) -->
-        <defs>
-          <linearGradient id="needle-fill" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%"  stop-color="#ff5500" stop-opacity="0"/>
-            <stop offset="5%"  stop-color="#dce8f4" stop-opacity="0.9"/>
-            <stop offset="100%" stop-color="rgba(200,220,240,0.2)" stop-opacity="0.2"/>
-          </linearGradient>
-        </defs>
-
-        <!-- HUB — concentric rings like LFA -->
-        <circle cx="190" cy="190" r="20" fill="#0c1016" stroke="rgba(200,212,222,0.15)" stroke-width="1"/>
-        <circle cx="190" cy="190" r="14" fill="#0e1218" stroke="rgba(200,212,222,0.08)" stroke-width="0.8"/>
-        <circle cx="190" cy="190" r="6"  fill="rgba(200,212,222,0.12)" stroke="rgba(200,212,222,0.2)" stroke-width="0.5"/>
-        <circle cx="190" cy="190" r="2.5" fill="#c8d4de"/>
-
-      </svg>
-    </div>
-
-    <!-- ═══ READOUTS BELOW GAUGE ═══ -->
-    <div id="readouts">
-      <div id="smoot-num">0.0</div>
-      <div id="smoot-label">SMOOTS / S</div>
-      <div id="rule"></div>
-      <div id="kmh-row">
-        <div id="kmh-num">0.0</div>
-        <div id="kmh-label">KM / H</div>
-      </div>
-      <div id="smoot-note">1 SMOOT = 1.7018 M &nbsp;·&nbsp; OLIVER SMOOT, MIT 1958</div>
-      <button id="unit-toggle">KM / H</button>
-    </div>
-
-    <!-- STATS -->
-    <div id="stats-row">
-      <div class="s-card">
-        <div class="s-lbl">MAX SPEED</div>
-        <div class="s-val" id="s-max-sm">0.0</div>
-        <div class="s-sub" id="s-max-km">0.0 km/h</div>
-      </div>
-      <div class="s-card">
-        <div class="s-lbl">DISTANCE</div>
-        <div class="s-val" id="s-dist">0.00</div>
-        <div class="s-sub">KM</div>
-      </div>
-      <div class="s-card">
-        <div class="s-lbl">ACCURACY</div>
-        <div class="s-val" id="s-acc">--</div>
-        <div class="s-sub">METRES</div>
-      </div>
-    </div>
-
-    <div id="geo-error"></div>
-
-  </div><!-- /gauge-area -->
-</div><!-- /app -->
+<div id="gps-status">
+  <div id="gps-pill">
+    <div id="gps-dot"></div>
+    <div id="gps-label">Initialising…</div>
+  </div>
+  <div id="gps-accuracy"></div>
+</div>
 
 <script>
-'use strict';
+// ─────────────────────────────────────────────
+// CONSTANTS
+// 160 km/h ÷ 1.7018 m/Smoot = 94.018 Smoot/h
+// ─────────────────────────────────────────────
+const SMOOT_M    = 1.7018;
+const MAX_KMH    = 160;
+const MAX_SMOOT  = MAX_KMH / SMOOT_M;        // ≈ 94.02
+const KMH_PER_SMOOT = SMOOT_M;              // multiply Smoot/h → km/h
+const MPH_PER_SMOOT = SMOOT_M / 1.60934;
 
-// ═══ CONFIG ═══
-const SMOOT      = 1.7018;
-const CX = 190, CY = 190;
-const R_ZONE     = 148; // zone arc radius
-const R_LIVE     = 152; // live arc radius
-const R_TICK_OUT = 158;
-const R_MAJ_IN   = 140;
-const R_MED_IN   = 146;
-const R_MIN_IN   = 151;
-const R_LABEL    = 126;
-const A_START    = -145; // 0 km/h (degrees from top)
-const A_SPAN     = 290;  // total sweep — wide LFA-style arc
+// Dial geometry (all angles clockwise from 12-o'clock)
+const CX = 250, CY = 250;
+const R_TRACK  = 188;
+const ANG_MIN  = -225;   // 0 Smoot/h  → 7-o'clock
+const ANG_MAX  =   45;   // MAX Smoot/h→ 5-o'clock
+const ANG_SWEEP = ANG_MAX - ANG_MIN; // 270°
 
-// ═══ STATE ═══
-let currentKmh = 0, maxKmh = 0, totalDist = 0, lastLL = null;
-let warpSpeed = 0, wakeLock = null;
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let liveSmoot  = 0;   // what GPS says
+let animSmoot  = 0;   // what the needle shows right now
+let peakSmoot  = 0;
+let animRafId  = null;
+let gpsLive    = false;  // becomes true after startup sweep
 
-// ═══ ELEMENTS ═══
-const $splash   = document.getElementById('splash');
-const $app      = document.getElementById('app');
-const $splashBtn= document.getElementById('splash-btn');
-const $gpsDot   = document.getElementById('gps-dot');
-const $gpsText  = document.getElementById('gps-text');
-const $clock    = document.getElementById('clock-val');
-const $needle   = document.getElementById('needle-grp');
-const $arcLive  = document.getElementById('arc-live');
-const $smootNum = document.getElementById('smoot-num');
-const $kmhNum   = document.getElementById('kmh-num');
-const $sMaxSm   = document.getElementById('s-max-sm');
-const $sMaxKm   = document.getElementById('s-max-km');
-const $sDist    = document.getElementById('s-dist');
-const $sAcc     = document.getElementById('s-acc');
-const $geoErr   = document.getElementById('geo-error');
+// ─────────────────────────────────────────────
+// GEOMETRY HELPERS
+// ─────────────────────────────────────────────
+function smootToDeg(s) {
+  return ANG_MIN + (Math.min(s, MAX_SMOOT) / MAX_SMOOT) * ANG_SWEEP;
+}
 
-// ═══ STARFIELD ═══
-const canvas = document.getElementById('stars');
+function degToXY(deg, r) {
+  const rad = (deg - 90) * Math.PI / 180; // SVG: 0° = top
+  return { x: CX + r * Math.cos(rad), y: CY + r * Math.sin(rad) };
+}
+
+function arcD(a1, a2, r) {
+  const s = degToXY(a1, r), e = degToXY(a2, r);
+  const large = (a2 - a1 > 180) ? 1 : 0;
+  return `M${s.x} ${s.y} A${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
+}
+
+// ─────────────────────────────────────────────
+// BUILD STATIC DIAL ARCS & TICKS
+// ─────────────────────────────────────────────
+function buildDial() {
+  // Full track background
+  document.getElementById('arcTrackBg').setAttribute('d', arcD(ANG_MIN, ANG_MAX, R_TRACK));
+
+  // Yellow 80–95%, Red 95–100%
+  const angY0 = smootToDeg(MAX_SMOOT * 0.80);
+  const angR0 = smootToDeg(MAX_SMOOT * 0.95);
+  document.getElementById('arcYellow').setAttribute('d', arcD(angY0, angR0, R_TRACK));
+  document.getElementById('arcRed'   ).setAttribute('d', arcD(angR0, ANG_MAX, R_TRACK));
+
+  // Ticks: major every 10 Smoot/h, minor every 2
+  const tickG  = document.getElementById('ticks');
+  const labelG = document.getElementById('tickLabels');
+  const rOut   = R_TRACK - 12;
+
+  for (let s = 0; s <= MAX_SMOOT + 0.01; s += 2) {
+    const isMajor = Math.abs(s % 10) < 0.1;
+    const ang     = smootToDeg(s);
+    const len     = isMajor ? 20 : 9;
+    const p1      = degToXY(ang, rOut);
+    const p2      = degToXY(ang, rOut - len);
+
+    const inRed  = s >= MAX_SMOOT * 0.95;
+    const inAmb  = s >= MAX_SMOOT * 0.80;
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+    line.setAttribute('stroke',       inRed ? '#ff1a1a' : inAmb ? '#ffb300' : isMajor ? '#60758a' : '#1e2e3e');
+    line.setAttribute('stroke-width', isMajor ? 2 : 1);
+    line.setAttribute('opacity',      inRed ? '0.9' : inAmb ? '0.8' : '1');
+    tickG.appendChild(line);
+
+    if (isMajor) {
+      const lp  = degToXY(ang, rOut - 34);
+      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x', lp.x);
+      txt.setAttribute('y', lp.y);
+      txt.setAttribute('text-anchor','middle');
+      txt.setAttribute('dominant-baseline','central');
+      txt.setAttribute('font-family','Orbitron,monospace');
+      txt.setAttribute('font-size','12');
+      txt.setAttribute('font-weight','700');
+      txt.setAttribute('fill', inRed ? '#ff1a1a' : inAmb ? '#ffb300' : '#3a5068');
+      txt.textContent = Math.round(s);
+      labelG.appendChild(txt);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// RENDER NEEDLE AT ARBITRARY SMOOT VALUE
+// ─────────────────────────────────────────────
+function renderNeedle(s) {
+  s = Math.max(0, Math.min(MAX_SMOOT, s));
+  const deg = smootToDeg(s);
+
+  // Rotate needle and its glow
+  const xfm = `rotate(${deg}, ${CX}, ${CY})`;
+  document.getElementById('needle'    ).setAttribute('transform', xfm);
+  document.getElementById('needleGlow').setAttribute('transform', xfm);
+
+  // Active arc
+  if (s > 0.005) {
+    const col = s >= MAX_SMOOT*0.95 ? '#ff1a1a' : s >= MAX_SMOOT*0.80 ? '#ffb300' : '#ff6a00';
+    const d   = arcD(ANG_MIN, deg, R_TRACK);
+    document.getElementById('arcActive').setAttribute('d', d);
+    document.getElementById('arcGlow'  ).setAttribute('d', d);
+    document.getElementById('arcActive').setAttribute('stroke', col);
+    document.getElementById('arcGlow'  ).setAttribute('stroke', col);
+  } else {
+    document.getElementById('arcActive').setAttribute('d','');
+    document.getElementById('arcGlow'  ).setAttribute('d','');
+  }
+
+  // Readouts
+  const kmh = s * KMH_PER_SMOOT;
+  const mph = s * MPH_PER_SMOOT;
+  document.getElementById('speedText' ).textContent = s.toFixed(2);
+  document.getElementById('val-smoot' ).textContent = s.toFixed(2);
+  document.getElementById('val-kmh'   ).textContent = kmh.toFixed(1);
+  document.getElementById('val-mph'   ).textContent = mph.toFixed(1);
+
+  // Drive mode
+  const pct  = s / MAX_SMOOT;
+  const mode = pct < 0.25 ? 'STRADA' : pct < 0.55 ? 'SPORT' : pct < 0.80 ? 'CORSA' : 'STO';
+  const col2 = pct < 0.25 ? '#00e5ff' : pct < 0.55 ? '#ffb300' : pct < 0.80 ? '#ff6a00' : '#ff1a1a';
+  const mEl  = document.getElementById('val-mode');
+  mEl.textContent = mode;
+  mEl.style.color = col2;
+
+  // Peak (ignore during sweep — gpsLive guards this)
+  if (gpsLive && s > peakSmoot) {
+    peakSmoot = s;
+    document.getElementById('val-peak').textContent = s.toFixed(2);
+  }
+
+  // Redline flash
+  const rEl = document.getElementById('redlineText');
+  if (s >= MAX_SMOOT * 0.95) {
+    rEl.setAttribute('opacity','1');
+    rEl.classList.add('redline-active');
+  } else {
+    rEl.setAttribute('opacity','0');
+    rEl.classList.remove('redline-active');
+  }
+}
+
+// ─────────────────────────────────────────────
+// SMOOTH GPS ANIMATION (used after sweep)
+// ─────────────────────────────────────────────
+function animateTo(target) {
+  if (animRafId) cancelAnimationFrame(animRafId);
+  function step() {
+    const diff = target - animSmoot;
+    if (Math.abs(diff) < 0.004) {
+      animSmoot = target;
+      renderNeedle(animSmoot);
+      animRafId = null;
+      return;
+    }
+    animSmoot += diff * 0.13;
+    renderNeedle(animSmoot);
+    animRafId = requestAnimationFrame(step);
+  }
+  animRafId = requestAnimationFrame(step);
+}
+
+// ─────────────────────────────────────────────
+// TWEEN HELPER  (used for startup sweep)
+// ─────────────────────────────────────────────
+function tween(from, to, ms, ease, onTick, onDone) {
+  const t0 = performance.now();
+  function frame(now) {
+    let p = Math.min(1, (now - t0) / ms);
+    // apply easing
+    if      (ease === 'easeIn'    ) p = p * p * p;
+    else if (ease === 'easeOut'   ) p = 1 - Math.pow(1-p, 3);
+    else if (ease === 'easeInOut' ) p = p<.5 ? 4*p*p*p : 1-Math.pow(-2*p+2,3)/2;
+    const val = from + (to - from) * p;
+    animSmoot = val;
+    renderNeedle(val);
+    if (p < 1) requestAnimationFrame(frame);
+    else { animSmoot = to; renderNeedle(to); if (onDone) onDone(); }
+  }
+  requestAnimationFrame(frame);
+}
+
+function wait(ms, fn) { setTimeout(fn, ms); }
+
+// ─────────────────────────────────────────────
+// LFA-STYLE STARTUP SWEEP
+// Timeline (ms):
+//   0    → logo fades in on overlay
+//   500  → needle rockets from 0 → MAX  (480ms, cubic ease-in)
+//   980  → needle snaps back to 60%     (140ms, ease-out)
+//   1120 → needle sweeps home to 0      (680ms, ease-out)
+//   1800 → hold 0 for a beat
+//   2000 → overlay fades out
+//   2700 → overlay removed, GPS activates
+// ─────────────────────────────────────────────
+function runStartupSweep() {
+  // ensure needle is hard at 0 before we start
+  animSmoot = 0;
+  renderNeedle(0);
+
+  // Show logo
+  wait(80, () => {
+    document.getElementById('startup-logo').classList.add('show');
+    document.getElementById('startup-sub' ).classList.add('show');
+    document.getElementById('startup-line').classList.add('show');
+  });
+
+  // Phase 1: slam to MAX
+  wait(500, () => {
+    tween(0, MAX_SMOOT, 480, 'easeIn', null, () => {
+
+      // Phase 2: snap back to 60%
+      wait(20, () => {
+        tween(MAX_SMOOT, MAX_SMOOT * 0.60, 140, 'easeOut', null, () => {
+
+          // Phase 3: sweep gracefully to 0
+          wait(20, () => {
+            tween(MAX_SMOOT * 0.60, 0, 680, 'easeOut', null, () => {
+
+              // Phase 4: overlay fade
+              wait(260, () => {
+                document.getElementById('startup-overlay').classList.add('fade-out');
+
+                // Phase 5: remove overlay, activate GPS
+                wait(700, () => {
+                  const ov = document.getElementById('startup-overlay');
+                  ov.style.display = 'none';
+                  gpsLive = true;
+                  // apply any speed that GPS already reported
+                  animateTo(liveSmoot);
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// GPS
+// ─────────────────────────────────────────────
+const gpsDot   = document.getElementById('gps-dot');
+const gpsLabel = document.getElementById('gps-label');
+const accVal   = document.getElementById('val-acc');
+const accPill  = document.getElementById('gps-accuracy');
+
+function setGpsUI(state, text, acc) {
+  gpsDot.className = state;
+  gpsLabel.textContent = text;
+  if (acc != null) {
+    accVal.textContent  = acc.toFixed(0);
+    accPill.textContent = `±${acc.toFixed(0)} m accuracy`;
+  } else {
+    accPill.textContent = '';
+  }
+}
+
+function onGpsPosition(pos) {
+  const mps   = pos.coords.speed != null ? pos.coords.speed : 0;
+  const smoot = (mps * 3.6) / KMH_PER_SMOOT;
+  liveSmoot = smoot;
+  if (gpsLive) animateTo(liveSmoot);
+  setGpsUI('active', 'GPS Active', pos.coords.accuracy);
+}
+
+function onGpsError(err) {
+  const msg = { 1:'Permission denied', 2:'Position unavailable', 3:'GPS timeout' };
+  setGpsUI('error', msg[err.code] || 'GPS error', null);
+  accVal.textContent = '—';
+}
+
+if ('geolocation' in navigator) {
+  setGpsUI('searching', 'Acquiring GPS…', null);
+  navigator.geolocation.watchPosition(onGpsPosition, onGpsError, {
+    enableHighAccuracy: true,
+    maximumAge: 1000,
+    timeout: 20000
+  });
+} else {
+  setGpsUI('error', 'GPS unavailable', null);
+}
+
+// ─────────────────────────────────────────────
+// STARFIELD WARP
+// ─────────────────────────────────────────────
+const canvas = document.getElementById('starfield');
 const ctx    = canvas.getContext('2d');
-const N_STARS = 300;
-let stars = [];
+let   stars  = [];
 
-function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
 
-function makeStar(rand) {
+function makeStar(scatter) {
   return {
-    x: (Math.random() - 0.5) * canvas.width  * 2,
-    y: (Math.random() - 0.5) * canvas.height * 2,
-    z: rand ? Math.random() * canvas.width : canvas.width,
+    x:  (Math.random() - 0.5) * canvas.width,
+    y:  (Math.random() - 0.5) * canvas.height,
+    z:  scatter ? Math.random() * canvas.width : canvas.width,
     pz: canvas.width
   };
 }
 
-function initStars() { stars = Array.from({length:N_STARS}, () => makeStar(true)); }
+function initStars() {
+  stars = [];
+  for (let i = 0; i < 220; i++) stars.push(makeStar(true));
+}
 
-function lerp(a, b, t) { return a + (b - a) * t; }
+function drawStars() {
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2;
+  ctx.clearRect(0,0,W,H);
 
-let lastT = 0;
-function drawStars(ts) {
-  const dt = Math.min(ts - lastT, 50) / 16.67;
-  lastT = ts;
+  // During sweep treat animSmoot as visual speed factor
+  const sf     = Math.min(1, animSmoot / MAX_SMOOT);
+  const spd    = 1.5 + sf * 55;
+  const target = Math.floor(60 + sf * 240);
 
-  // Clear with trail
-  ctx.fillStyle = 'rgba(5,7,10,0.82)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const hw = canvas.width / 2, hh = canvas.height / 2;
-
-  const targetWarp = Math.min(currentKmh / 180, 1);
-  warpSpeed = lerp(warpSpeed, targetWarp, 0.05 * dt);
-
-  // Speed: at rest gentle drift, fast = warp
-  const spd = (0.8 + warpSpeed * 32) * dt;
+  while (stars.length < target) stars.push(makeStar(false));
+  if (stars.length > target + 40) stars.length = target;
 
   for (let i = 0; i < stars.length; i++) {
     const s = stars[i];
     s.pz = s.z;
     s.z -= spd;
-
     if (s.z <= 0) { Object.assign(s, makeStar(false)); s.pz = s.z; continue; }
 
-    const sx = (s.x / s.z) * hw + hw;
-    const sy = (s.y / s.z) * hh + hh;
-    const px = (s.x / s.pz) * hw + hw;
-    const py = (s.y / s.pz) * hh + hh;
+    const sx = (s.x / s.z)  * W + cx;
+    const sy = (s.y / s.z)  * H + cy;
+    const px = (s.x / s.pz) * W + cx;
+    const py = (s.y / s.pz) * H + cy;
 
-    const life  = 1 - s.z / canvas.width;
-    const alpha = Math.min(1, life * 1.8);
-    const sz    = Math.max(0.3, life * 2.8);
-
-    // Colour: slow = cool blue-white, fast = warm white with blue tinge
-    const r = Math.floor(lerp(140, 255, life));
-    const g = Math.floor(lerp(180, 248, life));
-    const b = Math.floor(lerp(230, 255, life));
+    const bright = 1 - s.z / W;
+    const alpha  = Math.min(1, bright * (0.35 + sf * 0.65));
+    const lw     = Math.max(0.4, bright * (1 + sf * 2.5));
 
     ctx.beginPath();
-    ctx.strokeStyle = `rgba(${r},${g},${b},${alpha * (0.4 + warpSpeed * 0.6)})`;
-    ctx.lineWidth   = sz * (0.5 + warpSpeed * 0.7);
     ctx.moveTo(px, py);
     ctx.lineTo(sx, sy);
+
+    const col = sf > 0.75
+      ? `hsla(${Math.random()>0.5?200:30},80%,80%,${alpha})`
+      : sf > 0.4
+        ? `rgba(200,220,255,${alpha})`
+        : `rgba(240,244,255,${alpha})`;
+
+    ctx.strokeStyle = col;
+    ctx.lineWidth   = lw;
     ctx.stroke();
+
+    if (sf < 0.45 && bright > 0.3) {
+      ctx.beginPath();
+      ctx.arc(sx, sy, Math.max(0.3, bright * 0.8), 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.fill();
+    }
+  }
+
+  if (sf > 0.45) {
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 180*sf);
+    g.addColorStop(0, `rgba(255,106,0,${0.18*sf})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
   }
 
   requestAnimationFrame(drawStars);
 }
 
-// ═══ GAUGE GEOMETRY ═══
-function d2r(d) { return d * Math.PI / 180; }
-function pt(r, deg) {
-  const a = d2r(deg - 90);
-  return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
-}
-function arcD(r, d1, d2) {
-  const [sx,sy] = pt(r,d1), [ex,ey] = pt(r,d2);
-  const large = (d2 - d1) > 180 ? 1 : 0;
-  return `M${sx.toFixed(2)} ${sy.toFixed(2)} A${r} ${r} 0 ${large} 1 ${ex.toFixed(2)} ${ey.toFixed(2)}`;
-}
-function kmhDeg(k) { return A_START + (Math.min(k, 200) / 200) * A_SPAN; }
-
-function buildGauge() {
-  // Zone arcs
-  document.getElementById('zone-g').setAttribute('d', arcD(R_ZONE, kmhDeg(0),   kmhDeg(80)));
-  document.getElementById('zone-y').setAttribute('d', arcD(R_ZONE, kmhDeg(80),  kmhDeg(130)));
-  document.getElementById('zone-r').setAttribute('d', arcD(R_ZONE, kmhDeg(130), kmhDeg(200)));
-
-  const tG = document.getElementById('ticks');
-  const lG = document.getElementById('spd-labels');
-
-  for (let k = 0; k <= 200; k += 2) {
-    const deg  = kmhDeg(k);
-    const maj  = k % 20 === 0;
-    const med  = k % 10 === 0 && !maj;
-    const rIn  = maj ? R_MAJ_IN : med ? R_MED_IN : R_MIN_IN;
-
-    const [x1,y1] = pt(R_TICK_OUT, deg);
-    const [x2,y2] = pt(rIn, deg);
-    const ln = document.createElementNS('http://www.w3.org/2000/svg','line');
-    ln.setAttribute('x1',x1.toFixed(2)); ln.setAttribute('y1',y1.toFixed(2));
-    ln.setAttribute('x2',x2.toFixed(2)); ln.setAttribute('y2',y2.toFixed(2));
-    // Colour ticks by zone
-    const inRed   = k >= 130;
-    const inAmber = k >= 80 && k < 130;
-    let color;
-    if (maj) {
-      color = inRed ? 'rgba(255,80,80,0.85)' : inAmber ? 'rgba(255,176,32,0.75)' : 'rgba(200,212,222,0.8)';
-    } else if (med) {
-      color = inRed ? 'rgba(255,80,80,0.4)' : inAmber ? 'rgba(255,176,32,0.35)' : 'rgba(200,212,222,0.3)';
-    } else {
-      color = inRed ? 'rgba(255,80,80,0.15)' : 'rgba(200,212,222,0.1)';
-    }
-    ln.setAttribute('stroke', color);
-    ln.setAttribute('stroke-width', maj ? '1.8' : med ? '1' : '0.6');
-    tG.appendChild(ln);
-  }
-
-  // Labels at every 20 km/h
-  for (let k = 0; k <= 200; k += 20) {
-    const [lx,ly] = pt(R_LABEL, kmhDeg(k));
-    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
-    txt.setAttribute('x', lx.toFixed(2));
-    txt.setAttribute('y', (ly + 4).toFixed(2));
-    const inRed   = k >= 130;
-    const inAmber = k >= 80 && k < 130;
-    txt.setAttribute('fill',
-      inRed ? 'rgba(255,80,80,0.75)' : inAmber ? 'rgba(255,176,32,0.7)' : 'rgba(200,212,222,0.65)');
-    txt.textContent = k;
-    lG.appendChild(txt);
-  }
-
-  // Expose CSS vars for boot animation
-  document.getElementById('needle-grp').style.setProperty('--a-start', kmhDeg(0)+'deg');
-  document.getElementById('needle-grp').style.setProperty('--a-end',   kmhDeg(200)+'deg');
-}
-
-function setNeedle(kmh) {
-  const deg = kmhDeg(Math.max(0, Math.min(200, kmh)));
-  $needle.style.transform = `rotate(${deg}deg)`;
-  if (kmh > 0) {
-    $arcLive.setAttribute('d', arcD(R_LIVE, kmhDeg(0), kmhDeg(kmh)));
-    $arcLive.style.opacity = '1';
-  } else {
-    $arcLive.style.opacity = '0';
-  }
-}
-
-// ═══ UNIT MODE ═══
-let showKmh = false;
-const $unitToggle = document.getElementById('unit-toggle');
-const $smootLabel = document.getElementById('smoot-label');
-const $kmhLabel   = document.getElementById('kmh-label');
-
-$unitToggle.addEventListener('click', () => {
-  showKmh = !showKmh;
-  $unitToggle.textContent = showKmh ? 'SMOOTS / S' : 'KM / H';
-  $unitToggle.classList.toggle('active', showKmh);
-  updateSpeed(currentKmh);
-});
-
-// ═══ SPEED UPDATE ═══
-function kmhToSmootPerSec(k) { return k * 1000 / 3600 / SMOOT; }
-
-function updateSpeed(kmh) {
-  currentKmh = kmh;
-  const sm = kmhToSmootPerSec(kmh);
-
-  if (showKmh) {
-    $smootNum.textContent  = kmh.toFixed(1);
-    $smootLabel.textContent = 'KM / H';
-    $kmhNum.textContent    = sm.toFixed(2);
-    $kmhLabel.textContent  = 'SMOOTS / S';
-  } else {
-    $smootNum.textContent  = sm.toFixed(2);
-    $smootLabel.textContent = 'SMOOTS / S';
-    $kmhNum.textContent    = kmh.toFixed(1);
-    $kmhLabel.textContent  = 'KM / H';
-  }
-
-  $smootNum.classList.remove('warn','danger');
-  if      (kmh >= 130) $smootNum.classList.add('danger');
-  else if (kmh >= 80)  $smootNum.classList.add('warn');
-
-  setNeedle(kmh);
-
-  if (kmh > maxKmh) {
-    maxKmh = kmh;
-    $sMaxSm.textContent = kmhToSmootPerSec(maxKmh).toFixed(2);
-    $sMaxKm.textContent = maxKmh.toFixed(1) + ' km/h';
-  }
-}
-
-// ═══ GEOLOCATION ═══
-function haversineKm(la1,lo1,la2,lo2) {
-  const R=6371, dLa=(la2-la1)*Math.PI/180, dLo=(lo2-lo1)*Math.PI/180;
-  const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-
-function onPos(pos) {
-  $geoErr.style.display = 'none';
-  const {latitude:lat, longitude:lon, speed, accuracy} = pos.coords;
-  const kmh = (speed !== null && speed >= 0) ? speed * 3.6 : 0;
-
-  $sAcc.textContent = accuracy !== null ? Math.round(accuracy) : '--';
-  if      (accuracy < 10) { $gpsDot.className='ok';   $gpsText.textContent='GPS ±'+Math.round(accuracy)+'m'; }
-  else if (accuracy < 30) { $gpsDot.className='warn';  $gpsText.textContent='GPS ±'+Math.round(accuracy)+'m'; }
-  else                    { $gpsDot.className='bad';   $gpsText.textContent='GPS WEAK'; }
-
-  if (lastLL) {
-    const d = haversineKm(lastLL[0],lastLL[1],lat,lon);
-    if (d > 0.002) { totalDist += d; $sDist.textContent = totalDist.toFixed(2); }
-  }
-  lastLL = [lat, lon];
-  updateSpeed(kmh);
-}
-
-function onGeoErr(e) {
-  const m = {1:'LOCATION ACCESS DENIED — CHECK SETTINGS', 2:'POSITION UNAVAILABLE', 3:'GPS TIMEOUT'};
-  $geoErr.textContent = m[e.code] || 'GPS ERROR';
-  $geoErr.style.display = 'block';
-  $gpsDot.className = 'bad'; $gpsText.textContent = 'NO GPS';
-}
-
-function startGeo() {
-  if (!navigator.geolocation) { onGeoErr({code:2}); return; }
-  navigator.geolocation.watchPosition(onPos, onGeoErr,
-    {enableHighAccuracy:true, timeout:10000, maximumAge:0});
-}
-
-// ═══ WAKE LOCK ═══
-async function acquireWakeLock() {
-  if ('wakeLock' in navigator) {
-    try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
-  }
-}
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) acquireWakeLock();
-});
-
-// ═══ CLOCK ═══
-function tickClock() {
-  const d = new Date();
-  $clock.textContent = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
-}
-
-// ═══ LFA BOOT SWEEP ═══
-function lfaBootSweep() {
-  const w = document.getElementById('gauge-wrap');
-  w.classList.add('lfa-booting');
-  setTimeout(() => w.classList.remove('lfa-booting'), 1700);
-}
-
-// ═══ INIT ═══
-resize();
-window.addEventListener('resize', () => { resize(); initStars(); });
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+resizeCanvas();
 initStars();
-buildGauge();
-updateSpeed(0);
-requestAnimationFrame(drawStars);
-tickClock();
-setInterval(tickClock, 15000);
+buildDial();
+renderNeedle(0);   // park needle at 0 (7-o'clock) before sweep
+drawStars();
+runStartupSweep();
 
-$splashBtn.addEventListener('click', () => {
-  $splash.style.display = 'none';
-  $app.style.display = 'flex';
-  lfaBootSweep();
-  startGeo();
-  acquireWakeLock();
-});
+window.addEventListener('resize', () => { resizeCanvas(); initStars(); });
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 </script>
 </body>
 </html>
