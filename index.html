@@ -5,625 +5,675 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Speedometer">
-<title>Speedometer</title>
+<meta name="apple-mobile-web-app-title" content="LFA SPEEDO">
+<title>CyberSmoot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@200;300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #080b11;
-    --surface: #0e1420;
-    --surface2: #141b28;
-    --accent: #f5a623;
-    --accent2: #00e5cc;
-    --danger: #ff3b55;
-    --ok: #34d058;
-    --warn: #f5a623;
-    --text: #dce4f0;
-    --muted: #4a5568;
-    --border: #1e2a3a;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; }
+:root {
+  --bg:       #05070a;
+  --dial:     #090c10;
+  --bezel:    #1a1f26;
+  --silver:   #c8d4de;
+  --silver2:  #8a9aaa;
+  --white:    #eef4fa;
+  --needle:   #e8f0f8;
+  --tip:      #ff5500;
+  --tip-glow: rgba(255,85,0,0.6);
+  --blue:     #4aa8ff;
+  --blue-dim: rgba(74,168,255,0.15);
+  --amber:    #ffb020;
+  --red:      #ff3030;
+  --text:     #c0ccd8;
+  --muted:    rgba(192,204,216,0.35);
+  --star-slow:#a0c8e8;
+  --star-fast:#ffffff;
+}
 
-  /* === SPLASH === */
-  #splash {
-    position: fixed; inset: 0; z-index: 100;
-    background: var(--bg);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
-  }
-  #splash h1 { font-size: 36px; font-weight: 700; letter-spacing: 6px; color: var(--accent); text-transform: uppercase; }
-  #splash p { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--muted); letter-spacing: 2px; text-align: center; line-height: 1.8; }
-  #splash-btn {
-    margin-top: 12px; padding: 14px 40px;
-    background: transparent; border: 1.5px solid var(--accent);
-    color: var(--accent); font-family: 'Rajdhani', sans-serif;
-    font-size: 18px; font-weight: 600; letter-spacing: 4px;
-    cursor: pointer; text-transform: uppercase;
-    transition: background 0.2s, color 0.2s;
-  }
-  #splash-btn:active { background: var(--accent); color: var(--bg); transform: scale(0.97); }
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:'Titillium Web',sans-serif; }
 
-  /* === MAIN APP === */
-  #app {
-    display: none; flex-direction: column; align-items: center;
-    height: 100%; overflow-y: auto; padding: env(safe-area-inset-top, 20px) 0 env(safe-area-inset-bottom, 20px);
-  }
+/* ─── STARFIELD ─── */
+#stars { position:fixed; inset:0; z-index:0; }
 
-  /* === STATUS BAR === */
-  #status-bar {
-    width: 100%; display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 20px; font-family: 'Share Tech Mono', monospace; font-size: 11px;
-    color: var(--muted); letter-spacing: 1px;
-  }
-  #status-bar .gps-row { display: flex; align-items: center; gap: 8px; }
-  #acc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.4s; }
-  #acc-dot.ok { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
-  #acc-dot.warn { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
-  #acc-dot.bad { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
-  #rec-indicator { display: flex; align-items: center; gap: 6px; opacity: 0; transition: opacity 0.3s; }
-  #rec-indicator.active { opacity: 1; }
-  #rec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: pulse-rec 1.2s ease-in-out infinite; }
-  @keyframes pulse-rec { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+/* ─── VIGNETTE ─── */
+#vignette {
+  position:fixed; inset:0; z-index:1; pointer-events:none;
+  background:radial-gradient(ellipse 90% 90% at 50% 50%, transparent 40%, rgba(5,7,10,0.92) 100%);
+}
 
-  /* === GAUGE === */
-  #gauge-wrap { position: relative; width: min(88vw, 340px); margin: 4px 0 0; }
-  #gauge-svg { width: 100%; height: auto; overflow: visible; }
+/* ─── SPLASH ─── */
+#splash {
+  position:fixed; inset:0; z-index:200;
+  background:var(--bg);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+}
+.splash-logo {
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.splash-l-line {
+  width:1px; height:40px;
+  background:linear-gradient(180deg, transparent, var(--silver2));
+}
+.splash-l-line.bot {
+  background:linear-gradient(180deg, var(--silver2), transparent);
+}
+.splash-wordmark {
+  font-size:11px; font-weight:300; letter-spacing:12px; color:var(--silver2);
+  text-transform:uppercase;
+}
+.splash-model {
+  font-size:52px; font-weight:200; letter-spacing:6px;
+  color:var(--white);
+  text-shadow:0 0 40px rgba(200,212,222,0.25);
+  line-height:1;
+}
+.splash-sub {
+  font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:3px;
+  color:var(--muted); text-align:center; line-height:2.2;
+}
+#splash-btn {
+  margin-top:8px; padding:13px 48px;
+  background:transparent;
+  border:1px solid var(--silver2);
+  color:var(--silver); font-family:'Titillium Web',sans-serif;
+  font-size:11px; font-weight:300; letter-spacing:8px; text-transform:uppercase;
+  cursor:pointer; transition:border-color 0.25s, color 0.25s, background 0.25s;
+}
+#splash-btn:active { background:var(--silver2); color:var(--bg); border-color:var(--silver2); }
 
-  /* === SCANLINES === */
-  #gauge-wrap::after {
-    content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 50%;
-    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
-    z-index: 2;
-  }
+/* ─── APP ─── */
+#app {
+  display:none; position:relative; z-index:10;
+  flex-direction:column; align-items:center;
+  height:100%;
+  padding:env(safe-area-inset-top,14px) 0 env(safe-area-inset-bottom,10px);
+}
 
-  /* === SPEED READOUTS === */
-  #readouts { text-align: center; width: 100%; padding: 0 20px; margin-top: -8px; }
-  #smoot-val {
-    font-size: clamp(64px, 18vw, 88px); font-weight: 700;
-    color: var(--accent2); line-height: 1; letter-spacing: -2px;
-    font-variant-numeric: tabular-nums;
-    transition: color 0.3s;
-  }
-  #smoot-val.speeding { color: var(--danger); }
-  #smoot-unit { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--muted); letter-spacing: 3px; margin-top: 2px; }
-  #smoot-note { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 3px; text-align: center; }
-  #kmh-row {
-    margin-top: 12px; display: flex; align-items: baseline; justify-content: center; gap: 8px;
-  }
-  #kmh-display { font-size: 28px; font-weight: 600; color: var(--text); letter-spacing: 1px; font-variant-numeric: tabular-nums; }
-  #kmh-unit { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; }
+/* ─── STATUS BAR ─── */
+#status-bar {
+  width:100%; display:flex; align-items:center; justify-content:space-between;
+  padding:6px 22px;
+  font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:2px; color:var(--muted);
+}
+#gps-row { display:flex; align-items:center; gap:7px; }
+#gps-dot {
+  width:6px; height:6px; border-radius:50%; background:var(--muted);
+  transition:background 0.4s, box-shadow 0.4s;
+}
+#gps-dot.ok   { background:#50e898; box-shadow:0 0 6px #50e898; }
+#gps-dot.warn { background:var(--amber); box-shadow:0 0 6px var(--amber); }
+#gps-dot.bad  { background:var(--red);   box-shadow:0 0 6px var(--red); }
+#clock-val { letter-spacing:3px; }
 
-  /* === STATS ROW === */
-  #stats-row {
-    display: flex; gap: 12px; width: 100%; padding: 14px 20px 10px; justify-content: center;
-  }
-  .stat-card {
-    flex: 1; max-width: 160px; background: var(--surface); border: 1px solid var(--border);
-    padding: 10px 12px; text-align: center;
-  }
-  .stat-label { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
-  .stat-val { font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 2px; }
-  .stat-sub { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--accent2); margin-top: 1px; }
+/* ─── GAUGE CONTAINER ─── */
+#gauge-area {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  width:100%; padding-top:4px;
+}
 
-  /* === RECORDING STRIP === */
-  #rec-strip {
-    width: 100%; padding: 8px 20px;
-    background: rgba(255,59,85,0.08); border-top: 1px solid rgba(255,59,85,0.2); border-bottom: 1px solid rgba(255,59,85,0.2);
-    display: none; align-items: center; justify-content: space-between;
-    font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--danger);
-    letter-spacing: 1px;
-  }
-  #rec-strip.active { display: flex; }
+/* ─── GAUGE WRAP ─── */
+#gauge-wrap { position:relative; width:min(92vw,360px); }
+#gauge-svg  { width:100%; height:auto; display:block; overflow:visible; }
 
-  /* === BUTTONS === */
-  #controls { display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 10px 20px 6px; }
-  .btn {
-    width: 100%; padding: 16px; font-family: 'Rajdhani', sans-serif;
-    font-size: 17px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
-    border: 1.5px solid var(--border); background: var(--surface); color: var(--text);
-    cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden;
-  }
-  .btn:active { transform: scale(0.97); }
-  .btn-primary { border-color: var(--accent); color: var(--accent); }
-  .btn-primary:active { background: var(--accent); color: var(--bg); }
-  .btn-danger { border-color: var(--danger); color: var(--danger); }
-  .btn-danger:active { background: var(--danger); color: var(--bg); }
-  .btn-reset { border-color: var(--muted); color: var(--muted); font-size: 14px; padding: 12px; }
-  .btn-reset:active { background: var(--surface2); }
-  .btn:disabled { opacity: 0.35; pointer-events: none; }
+/* ─── READOUTS (below gauge) ─── */
+#readouts {
+  display:flex; flex-direction:column; align-items:center;
+  margin-top:2px; width:100%; gap:0;
+}
 
-  /* === TOAST === */
-  #toast {
-    position: fixed; bottom: calc(env(safe-area-inset-bottom, 20px) + 20px);
-    left: 50%; transform: translateX(-50%) translateY(80px);
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); font-family: 'Share Tech Mono', monospace;
-    font-size: 12px; letter-spacing: 1px;
-    padding: 10px 20px; white-space: nowrap;
-    transition: transform 0.3s ease; z-index: 50;
-  }
-  #toast.show { transform: translateX(-50%) translateY(0); }
-  #toast.ok { border-color: var(--ok); color: var(--ok); }
-  #toast.err { border-color: var(--danger); color: var(--danger); }
+/* Smoots — primary large */
+#smoot-num {
+  font-size:clamp(68px,19vw,96px); font-weight:200; line-height:1;
+  letter-spacing:-1px; font-variant-numeric:tabular-nums;
+  color:var(--white);
+  transition:color 0.35s;
+}
+#smoot-num.warn   { color:var(--amber); }
+#smoot-num.danger { color:var(--red); }
+#smoot-label {
+  font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:6px;
+  color:var(--muted); margin-top:-2px;
+}
 
-  /* === ERROR === */
-  #geo-error {
-    width: 100%; padding: 14px 20px; margin: 4px 0;
-    background: rgba(255,59,85,0.08); border-top: 1px solid rgba(255,59,85,0.3);
-    font-family: 'Share Tech Mono', monospace; font-size: 11px;
-    color: var(--danger); line-height: 1.7; text-align: center; display: none;
-  }
+/* thin rule */
+#rule {
+  width:180px; height:1px; margin:8px 0 7px;
+  background:linear-gradient(90deg, transparent, var(--silver2), transparent);
+  opacity:0.3;
+}
 
-  /* === BOOT ANIMATION === */
-  @keyframes boot-needle { 0%{transform:rotate(-130deg)} 50%{transform:rotate(0deg)} 100%{transform:rotate(-130deg)} }
-  .booting #needle-group { animation: boot-needle 0.9s ease-in-out forwards; }
+/* km/h — secondary */
+#kmh-row { display:flex; align-items:baseline; gap:8px; }
+#kmh-num {
+  font-size:30px; font-weight:300; color:var(--silver2);
+  font-variant-numeric:tabular-nums; letter-spacing:1px;
+}
+#kmh-label {
+  font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:3px; color:var(--muted);
+}
+#smoot-note {
+  font-family:'Share Tech Mono',monospace; font-size:9px;
+  color:rgba(192,204,216,0.18); letter-spacing:2px; margin-top:6px; text-align:center;
+}
+
+/* ─── STATS ─── */
+#stats-row {
+  display:flex; gap:0; width:100%; padding:10px 18px 0; justify-content:center;
+}
+.s-card {
+  flex:1; max-width:120px; text-align:center; padding:8px 6px;
+  border-top:1px solid rgba(200,212,222,0.08);
+  position:relative;
+}
+.s-card + .s-card::before {
+  content:''; position:absolute; left:0; top:20%; bottom:20%;
+  width:1px; background:rgba(200,212,222,0.08);
+}
+.s-lbl {
+  font-family:'Share Tech Mono',monospace; font-size:8px; letter-spacing:3px;
+  color:var(--muted); text-transform:uppercase;
+}
+.s-val {
+  font-size:20px; font-weight:300; color:var(--silver); margin-top:2px;
+  font-variant-numeric:tabular-nums;
+}
+.s-sub {
+  font-family:'Share Tech Mono',monospace; font-size:8px; color:rgba(74,168,255,0.5);
+  margin-top:1px; letter-spacing:1px;
+}
+
+/* ─── GEO ERROR ─── */
+#geo-error {
+  display:none; width:100%; padding:8px 20px; text-align:center;
+  font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:1px;
+  color:var(--red); line-height:1.8;
+}
+
+/* ─── LFA BOOT SWEEP ─── */
+@keyframes lfa-sweep {
+  0%   { transform:rotate(var(--a-start)) }
+  30%  { transform:rotate(var(--a-end)) }
+  55%  { transform:rotate(calc(var(--a-end) - 20deg)) }
+  75%  { transform:rotate(var(--a-end)) }
+  100% { transform:rotate(var(--a-start)) }
+}
+.lfa-booting #needle-grp {
+  animation:lfa-sweep 1.6s cubic-bezier(.4,0,.2,1) forwards;
+}
 </style>
 </head>
 <body>
 
-<!-- SPLASH SCREEN -->
+<canvas id="stars"></canvas>
+<div id="vignette"></div>
+
+<!-- ═══ SPLASH ═══ -->
 <div id="splash">
-  <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
-    <circle cx="30" cy="30" r="28" stroke="#f5a623" stroke-width="1.5" opacity="0.4"/>
-    <circle cx="30" cy="30" r="20" stroke="#f5a623" stroke-width="1"/>
-    <line x1="30" y1="30" x2="30" y2="12" stroke="#f5a623" stroke-width="2" stroke-linecap="round"/>
-    <circle cx="30" cy="30" r="3" fill="#f5a623"/>
-  </svg>
-  <h1>Speedo</h1>
-  <p>GPS SPEEDOMETER</p>
-  <button id="splash-btn">INITIALISE</button>
+  <div class="splash-logo">
+    <div class="splash-l-line"></div>
+    <div class="splash-wordmark">CYBER</div>
+    <div class="splash-model">SMOOT</div>
+    <div class="splash-wordmark">Speedometer</div>
+    <div class="splash-l-line bot"></div>
+  </div>
+  <div class="splash-sub">SMOOTS / H &nbsp;·&nbsp; KM / H<br>GPS PRECISION INSTRUMENT</div>
+  <button id="splash-btn">START ENGINE</button>
 </div>
 
-<!-- MAIN APP -->
+<!-- ═══ APP ═══ -->
 <div id="app">
 
-  <!-- STATUS BAR -->
   <div id="status-bar">
-    <div class="gps-row">
-      <div id="acc-dot"></div>
-      <span id="acc-text">ACQUIRING GPS</span>
+    <div id="gps-row">
+      <div id="gps-dot"></div>
+      <span id="gps-text">ACQUIRING</span>
     </div>
-    <div id="rec-indicator">
-      <div id="rec-dot"></div>
-      <span>REC</span>
+    <span id="clock-val">--:--</span>
+  </div>
+
+  <div id="gauge-area">
+
+    <!-- ═══ GAUGE SVG ═══ -->
+    <div id="gauge-wrap">
+      <svg id="gauge-svg" viewBox="0 0 380 240" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- Dial face radial gradient -->
+          <radialGradient id="dial-grad" cx="50%" cy="55%" r="52%">
+            <stop offset="0%"   stop-color="#111620"/>
+            <stop offset="60%"  stop-color="#0c1016"/>
+            <stop offset="100%" stop-color="#06080c"/>
+          </radialGradient>
+
+          <!-- Needle glow filter -->
+          <filter id="needle-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <!-- Subtle glow for active arc -->
+          <filter id="arc-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <!-- Tip glow -->
+          <filter id="tip-glow" x="-200%" y="-200%" width="500%" height="500%">
+            <feGaussianBlur stdDeviation="5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+
+          <!-- live arc gradient: blue → white → amber → red -->
+          <linearGradient id="live-grad" gradientUnits="userSpaceOnUse" x1="20" y1="190" x2="360" y2="190">
+            <stop offset="0%"   stop-color="#4aa8ff"/>
+            <stop offset="50%"  stop-color="#c8d4de"/>
+            <stop offset="78%"  stop-color="#ffb020"/>
+            <stop offset="100%" stop-color="#ff3030"/>
+          </linearGradient>
+
+          <!-- Bezel gradient -->
+          <linearGradient id="bezel-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stop-color="#2a3240"/>
+            <stop offset="40%"  stop-color="#1a2030"/>
+            <stop offset="100%" stop-color="#0e1420"/>
+          </linearGradient>
+        </defs>
+
+        <!-- OUTER BEZEL RING -->
+        <circle cx="190" cy="190" r="178" fill="url(#bezel-grad)" stroke="#0e1420" stroke-width="1"/>
+        <!-- bezel highlight line -->
+        <circle cx="190" cy="190" r="176" fill="none" stroke="rgba(200,212,222,0.08)" stroke-width="0.5"/>
+        <!-- inner bezel shadow -->
+        <circle cx="190" cy="190" r="170" fill="none" stroke="rgba(0,0,0,0.6)" stroke-width="4"/>
+
+        <!-- DIAL FACE -->
+        <circle cx="190" cy="190" r="166" fill="url(#dial-grad)"/>
+
+        <!-- OUTER TICK RING (decorative) -->
+        <circle cx="190" cy="190" r="158" fill="none" stroke="rgba(200,212,222,0.06)" stroke-width="0.5"/>
+
+        <!-- ZONE ARCS — subtle background colour bands -->
+        <!-- green 0–80 -->
+        <path id="zone-g" fill="none" stroke="rgba(80,232,152,0.06)" stroke-width="12" stroke-linecap="butt"/>
+        <!-- amber 80–130 -->
+        <path id="zone-y" fill="none" stroke="rgba(255,176,32,0.06)"  stroke-width="12" stroke-linecap="butt"/>
+        <!-- red 130–200 -->
+        <path id="zone-r" fill="none" stroke="rgba(255,48,48,0.06)"   stroke-width="12" stroke-linecap="butt"/>
+
+        <!-- LIVE ARC (fills with speed) -->
+        <path id="arc-live" fill="none" stroke="url(#live-grad)" stroke-width="3"
+              stroke-linecap="round" opacity="0" filter="url(#arc-glow)"/>
+
+        <!-- TICK MARKS -->
+        <g id="ticks"></g>
+
+        <!-- SPEED LABELS -->
+        <g id="spd-labels" font-family="'Titillium Web',sans-serif" font-size="11"
+           font-weight="300" fill="rgba(200,212,222,0.7)" text-anchor="middle"></g>
+
+        <!-- INNER RING — LFA-style concentric detail -->
+        <circle cx="190" cy="190" r="72" fill="none" stroke="rgba(200,212,222,0.05)" stroke-width="0.5"/>
+        <circle cx="190" cy="190" r="52" fill="none" stroke="rgba(200,212,222,0.04)" stroke-width="0.5"/>
+
+        <!-- NEEDLE GROUP — pivots at cx=190,cy=190 -->
+        <g id="needle-grp" style="transform-origin:190px 190px; transform:rotate(-145deg); transition:transform 120ms cubic-bezier(0.25,0.46,0.45,0.94);">
+          <!-- main needle shaft — long, slim, white -->
+          <polygon points="190,48 192,185 190,192 188,185"
+                   fill="url(#needle-fill)" opacity="0.95"/>
+          <!-- needle glow layer -->
+          <line x1="190" y1="52" x2="190" y2="185"
+                stroke="rgba(232,240,248,0.15)" stroke-width="4" stroke-linecap="round"
+                filter="url(#needle-glow)"/>
+          <!-- crisp white needle -->
+          <line x1="190" y1="52" x2="190" y2="185"
+                stroke="#dce8f4" stroke-width="1.2" stroke-linecap="round"/>
+          <!-- tip — LFA orange/red accent -->
+          <line x1="190" y1="48" x2="190" y2="90"
+                stroke="#ff5500" stroke-width="2" stroke-linecap="round"
+                filter="url(#tip-glow)"/>
+          <!-- counter-weight -->
+          <line x1="190" y1="192" x2="190" y2="214"
+                stroke="rgba(200,212,222,0.3)" stroke-width="2" stroke-linecap="round"/>
+        </g>
+
+        <!-- Define needle gradient (must be after group for correct coord space) -->
+        <defs>
+          <linearGradient id="needle-fill" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"  stop-color="#ff5500" stop-opacity="0"/>
+            <stop offset="5%"  stop-color="#dce8f4" stop-opacity="0.9"/>
+            <stop offset="100%" stop-color="rgba(200,220,240,0.2)" stop-opacity="0.2"/>
+          </linearGradient>
+        </defs>
+
+        <!-- HUB — concentric rings like LFA -->
+        <circle cx="190" cy="190" r="20" fill="#0c1016" stroke="rgba(200,212,222,0.15)" stroke-width="1"/>
+        <circle cx="190" cy="190" r="14" fill="#0e1218" stroke="rgba(200,212,222,0.08)" stroke-width="0.8"/>
+        <circle cx="190" cy="190" r="6"  fill="rgba(200,212,222,0.12)" stroke="rgba(200,212,222,0.2)" stroke-width="0.5"/>
+        <circle cx="190" cy="190" r="2.5" fill="#c8d4de"/>
+
+      </svg>
     </div>
-    <span id="clock">--:--</span>
-  </div>
 
-  <!-- GAUGE -->
-  <div id="gauge-wrap">
-    <svg id="gauge-svg" viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="3" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>
-
-      <!-- ARC ZONES: green 0-80, amber 80-130, red 130-200 -->
-      <!-- 0 km/h = -130deg, 200 km/h = +130deg; total span 260deg -->
-      <!-- green: -130 to -26 (80/200*260-130) -->
-      <!-- amber: -26 to +39 (130/200*260-130) -->
-      <!-- red: +39 to +130 -->
-      <path id="arc-green" fill="none" stroke="#34d058" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
-      <path id="arc-amber" fill="none" stroke="#f5a623" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
-      <path id="arc-red"   fill="none" stroke="#ff3b55" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
-
-      <!-- TICK MARKS -->
-      <g id="ticks"></g>
-
-      <!-- NEEDLE GROUP (rotates around cx=170,cy=170) -->
-      <g id="needle-group" style="transform-origin:170px 170px; transform:rotate(-130deg)">
-        <!-- needle -->
-        <line x1="170" y1="170" x2="170" y2="60" stroke="#f5a623" stroke-width="2.5" stroke-linecap="round" filter="url(#glow)"/>
-        <!-- hub -->
-        <circle cx="170" cy="170" r="8" fill="#0e1420" stroke="#f5a623" stroke-width="1.5"/>
-        <circle cx="170" cy="170" r="3" fill="#f5a623"/>
-      </g>
-
-      <!-- SPEED LABEL MARKS (0,20,40...200) -->
-      <g id="speed-labels" font-family="'Share Tech Mono',monospace" font-size="10" fill="#4a5568" text-anchor="middle"></g>
-
-      <!-- INNER CIRCLE decoration -->
-      <circle cx="170" cy="170" r="50" fill="none" stroke="#1e2a3a" stroke-width="0.5"/>
-    </svg>
-  </div>
-
-  <!-- SPEED READOUTS -->
-  <div id="readouts">
-    <div id="smoot-val">0.0</div>
-    <div id="smoot-unit">SMOOTS / H</div>
-    <div id="kmh-row">
-      <div id="kmh-display">0.0</div>
-      <div id="kmh-unit">KM / H</div>
+    <!-- ═══ READOUTS BELOW GAUGE ═══ -->
+    <div id="readouts">
+      <div id="smoot-num">0.0</div>
+      <div id="smoot-label">SMOOTS / H</div>
+      <div id="rule"></div>
+      <div id="kmh-row">
+        <div id="kmh-num">0.0</div>
+        <div id="kmh-label">KM / H</div>
+      </div>
+      <div id="smoot-note">1 SMOOT = 1.7018 M &nbsp;·&nbsp; OLIVER SMOOT, MIT 1958</div>
     </div>
-    <div id="smoot-note">1 smoot = 1.7018 m &nbsp;·&nbsp; Oliver Smoot, MIT 1958</div>
-  </div>
 
-  <!-- STATS -->
-  <div id="stats-row">
-    <div class="stat-card">
-      <div class="stat-label">MAX SPEED</div>
-      <div class="stat-val" id="max-kmh">0.0</div>
-      <div class="stat-sub" id="max-smoot">0.0 sm/h</div>
+    <!-- STATS -->
+    <div id="stats-row">
+      <div class="s-card">
+        <div class="s-lbl">MAX SPEED</div>
+        <div class="s-val" id="s-max-sm">0.0</div>
+        <div class="s-sub" id="s-max-km">0.0 km/h</div>
+      </div>
+      <div class="s-card">
+        <div class="s-lbl">DISTANCE</div>
+        <div class="s-val" id="s-dist">0.00</div>
+        <div class="s-sub">KM</div>
+      </div>
+      <div class="s-card">
+        <div class="s-lbl">ACCURACY</div>
+        <div class="s-val" id="s-acc">--</div>
+        <div class="s-sub">METRES</div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">DISTANCE</div>
-      <div class="stat-val" id="dist-val">0.00</div>
-      <div class="stat-sub">KM</div>
-    </div>
-  </div>
 
-  <!-- GPS ERROR -->
-  <div id="geo-error"></div>
+    <div id="geo-error"></div>
 
-  <!-- RECORDING STRIP -->
-  <div id="rec-strip">
-    <span>● RECORDING</span>
-    <span id="rec-time">00:00:00</span>
-    <span id="rec-pts">0 pts</span>
-  </div>
-
-  <!-- CONTROLS -->
-  <div id="controls">
-    <button class="btn btn-primary" id="btn-record">START RECORDING</button>
-    <button class="btn btn-danger"  id="btn-export" disabled>STOP &amp; EXPORT GPX</button>
-    <button class="btn btn-reset"   id="btn-reset">RESET SESSION</button>
-  </div>
-
-</div>
-
-<!-- TOAST -->
-<div id="toast"></div>
+  </div><!-- /gauge-area -->
+</div><!-- /app -->
 
 <script>
 'use strict';
 
-// === CONSTANTS ===
-const SMOOT = 1.7018;       // metres per smoot
-const CX = 170, CY = 170;  // gauge centre
-const R_ARC = 145;          // arc radius
-const R_TICK_OUT = 135;
-const R_TICK_IN_MAJ = 120;
-const R_TICK_IN_MIN = 127;
-const R_LABEL = 108;
-const ARC_START_DEG = -130; // 0 km/h
-const ARC_TOTAL = 260;      // degrees for 200 km/h
+// ═══ CONFIG ═══
+const SMOOT      = 1.7018;
+const CX = 190, CY = 190;
+const R_ZONE     = 148; // zone arc radius
+const R_LIVE     = 152; // live arc radius
+const R_TICK_OUT = 158;
+const R_MAJ_IN   = 140;
+const R_MED_IN   = 146;
+const R_MIN_IN   = 151;
+const R_LABEL    = 126;
+const A_START    = -145; // 0 km/h (degrees from top)
+const A_SPAN     = 290;  // total sweep — wide LFA-style arc
 
-// === STATE ===
-let watchId = null;
-let recording = false;
-let trackPoints = [];
-let maxKmh = 0;
-let totalDist = 0;
-let lastLatLon = null;
-let recStartTime = null;
-let recTimerInterval = null;
-let wakeLock = null;
-let clockInterval = null;
+// ═══ STATE ═══
+let currentKmh = 0, maxKmh = 0, totalDist = 0, lastLL = null;
+let warpSpeed = 0, wakeLock = null;
 
-// === ELEMENTS ===
-const $splash    = document.getElementById('splash');
-const $app       = document.getElementById('app');
-const $splashBtn = document.getElementById('splash-btn');
-const $accDot    = document.getElementById('acc-dot');
-const $accText   = document.getElementById('acc-text');
-const $recInd    = document.getElementById('rec-indicator');
-const $clock     = document.getElementById('clock');
-const $needle    = document.getElementById('needle-group');
-const $kmhDisp   = document.getElementById('kmh-display');
-const $smootVal  = document.getElementById('smoot-val');
-const $maxKmh    = document.getElementById('max-kmh');
-const $maxSmoot  = document.getElementById('max-smoot');
-const $distVal   = document.getElementById('dist-val');
-const $geoError  = document.getElementById('geo-error');
-const $recStrip  = document.getElementById('rec-strip');
-const $recTime   = document.getElementById('rec-time');
-const $recPts    = document.getElementById('rec-pts');
-const $btnRecord = document.getElementById('btn-record');
-const $btnExport = document.getElementById('btn-export');
-const $btnReset  = document.getElementById('btn-reset');
-const $toast     = document.getElementById('toast');
+// ═══ ELEMENTS ═══
+const $splash   = document.getElementById('splash');
+const $app      = document.getElementById('app');
+const $splashBtn= document.getElementById('splash-btn');
+const $gpsDot   = document.getElementById('gps-dot');
+const $gpsText  = document.getElementById('gps-text');
+const $clock    = document.getElementById('clock-val');
+const $needle   = document.getElementById('needle-grp');
+const $arcLive  = document.getElementById('arc-live');
+const $smootNum = document.getElementById('smoot-num');
+const $kmhNum   = document.getElementById('kmh-num');
+const $sMaxSm   = document.getElementById('s-max-sm');
+const $sMaxKm   = document.getElementById('s-max-km');
+const $sDist    = document.getElementById('s-dist');
+const $sAcc     = document.getElementById('s-acc');
+const $geoErr   = document.getElementById('geo-error');
 
-// === GAUGE DRAWING ===
-function degToRad(d) { return d * Math.PI / 180; }
+// ═══ STARFIELD ═══
+const canvas = document.getElementById('stars');
+const ctx    = canvas.getContext('2d');
+const N_STARS = 300;
+let stars = [];
 
-function arcPoint(cx, cy, r, deg) {
-  const a = degToRad(deg - 90);
-  return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+
+function makeStar(rand) {
+  return {
+    x: (Math.random() - 0.5) * canvas.width  * 2,
+    y: (Math.random() - 0.5) * canvas.height * 2,
+    z: rand ? Math.random() * canvas.width : canvas.width,
+    pz: canvas.width
+  };
 }
 
-function describeArc(cx, cy, r, startDeg, endDeg) {
-  const [sx, sy] = arcPoint(cx, cy, r, startDeg);
-  const [ex, ey] = arcPoint(cx, cy, r, endDeg);
-  const large = (endDeg - startDeg) > 180 ? 1 : 0;
-  return `M ${sx} ${sy} A ${r} ${r} 0 ${large} 1 ${ex} ${ey}`;
+function initStars() { stars = Array.from({length:N_STARS}, () => makeStar(true)); }
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+let lastT = 0;
+function drawStars(ts) {
+  const dt = Math.min(ts - lastT, 50) / 16.67;
+  lastT = ts;
+
+  // Clear with trail
+  ctx.fillStyle = 'rgba(5,7,10,0.82)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const hw = canvas.width / 2, hh = canvas.height / 2;
+
+  const targetWarp = Math.min(currentKmh / 180, 1);
+  warpSpeed = lerp(warpSpeed, targetWarp, 0.05 * dt);
+
+  // Speed: at rest gentle drift, fast = warp
+  const spd = (0.8 + warpSpeed * 32) * dt;
+
+  for (let i = 0; i < stars.length; i++) {
+    const s = stars[i];
+    s.pz = s.z;
+    s.z -= spd;
+
+    if (s.z <= 0) { Object.assign(s, makeStar(false)); s.pz = s.z; continue; }
+
+    const sx = (s.x / s.z) * hw + hw;
+    const sy = (s.y / s.z) * hh + hh;
+    const px = (s.x / s.pz) * hw + hw;
+    const py = (s.y / s.pz) * hh + hh;
+
+    const life  = 1 - s.z / canvas.width;
+    const alpha = Math.min(1, life * 1.8);
+    const sz    = Math.max(0.3, life * 2.8);
+
+    // Colour: slow = cool blue-white, fast = warm white with blue tinge
+    const r = Math.floor(lerp(140, 255, life));
+    const g = Math.floor(lerp(180, 248, life));
+    const b = Math.floor(lerp(230, 255, life));
+
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(${r},${g},${b},${alpha * (0.4 + warpSpeed * 0.6)})`;
+    ctx.lineWidth   = sz * (0.5 + warpSpeed * 0.7);
+    ctx.moveTo(px, py);
+    ctx.lineTo(sx, sy);
+    ctx.stroke();
+  }
+
+  requestAnimationFrame(drawStars);
 }
 
-function kmhToDeg(kmh) {
-  return ARC_START_DEG + (Math.min(kmh, 200) / 200) * ARC_TOTAL;
+// ═══ GAUGE GEOMETRY ═══
+function d2r(d) { return d * Math.PI / 180; }
+function pt(r, deg) {
+  const a = d2r(deg - 90);
+  return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
 }
+function arcD(r, d1, d2) {
+  const [sx,sy] = pt(r,d1), [ex,ey] = pt(r,d2);
+  const large = (d2 - d1) > 180 ? 1 : 0;
+  return `M${sx.toFixed(2)} ${sy.toFixed(2)} A${r} ${r} 0 ${large} 1 ${ex.toFixed(2)} ${ey.toFixed(2)}`;
+}
+function kmhDeg(k) { return A_START + (Math.min(k, 200) / 200) * A_SPAN; }
 
 function buildGauge() {
-  // Colour arcs
-  document.getElementById('arc-green').setAttribute('d', describeArc(CX, CY, R_ARC, ARC_START_DEG, kmhToDeg(80)));
-  document.getElementById('arc-amber').setAttribute('d', describeArc(CX, CY, R_ARC, kmhToDeg(80), kmhToDeg(130)));
-  document.getElementById('arc-red'  ).setAttribute('d', describeArc(CX, CY, R_ARC, kmhToDeg(130), kmhToDeg(200)));
+  // Zone arcs
+  document.getElementById('zone-g').setAttribute('d', arcD(R_ZONE, kmhDeg(0),   kmhDeg(80)));
+  document.getElementById('zone-y').setAttribute('d', arcD(R_ZONE, kmhDeg(80),  kmhDeg(130)));
+  document.getElementById('zone-r').setAttribute('d', arcD(R_ZONE, kmhDeg(130), kmhDeg(200)));
 
-  // Ticks
-  const ticksG = document.getElementById('ticks');
-  for (let kmh = 0; kmh <= 200; kmh += 5) {
-    const deg = kmhToDeg(kmh);
-    const isMaj = kmh % 20 === 0;
-    const rIn = isMaj ? R_TICK_IN_MAJ : R_TICK_IN_MIN;
-    const [x1, y1] = arcPoint(CX, CY, R_TICK_OUT, deg);
-    const [x2, y2] = arcPoint(CX, CY, rIn, deg);
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
-    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-    line.setAttribute('stroke', isMaj ? '#2a3a52' : '#1a2535');
-    line.setAttribute('stroke-width', isMaj ? '1.5' : '0.8');
-    ticksG.appendChild(line);
+  const tG = document.getElementById('ticks');
+  const lG = document.getElementById('spd-labels');
+
+  for (let k = 0; k <= 200; k += 2) {
+    const deg  = kmhDeg(k);
+    const maj  = k % 20 === 0;
+    const med  = k % 10 === 0 && !maj;
+    const rIn  = maj ? R_MAJ_IN : med ? R_MED_IN : R_MIN_IN;
+
+    const [x1,y1] = pt(R_TICK_OUT, deg);
+    const [x2,y2] = pt(rIn, deg);
+    const ln = document.createElementNS('http://www.w3.org/2000/svg','line');
+    ln.setAttribute('x1',x1.toFixed(2)); ln.setAttribute('y1',y1.toFixed(2));
+    ln.setAttribute('x2',x2.toFixed(2)); ln.setAttribute('y2',y2.toFixed(2));
+    // Colour ticks by zone
+    const inRed   = k >= 130;
+    const inAmber = k >= 80 && k < 130;
+    let color;
+    if (maj) {
+      color = inRed ? 'rgba(255,80,80,0.85)' : inAmber ? 'rgba(255,176,32,0.75)' : 'rgba(200,212,222,0.8)';
+    } else if (med) {
+      color = inRed ? 'rgba(255,80,80,0.4)' : inAmber ? 'rgba(255,176,32,0.35)' : 'rgba(200,212,222,0.3)';
+    } else {
+      color = inRed ? 'rgba(255,80,80,0.15)' : 'rgba(200,212,222,0.1)';
+    }
+    ln.setAttribute('stroke', color);
+    ln.setAttribute('stroke-width', maj ? '1.8' : med ? '1' : '0.6');
+    tG.appendChild(ln);
   }
 
-  // Labels
-  const labG = document.getElementById('speed-labels');
-  for (let kmh = 0; kmh <= 200; kmh += 20) {
-    const deg = kmhToDeg(kmh);
-    const [lx, ly] = arcPoint(CX, CY, R_LABEL, deg);
-    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    txt.setAttribute('x', lx); txt.setAttribute('y', ly + 3.5);
-    txt.textContent = kmh;
-    labG.appendChild(txt);
+  // Labels at every 20 km/h
+  for (let k = 0; k <= 200; k += 20) {
+    const [lx,ly] = pt(R_LABEL, kmhDeg(k));
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x', lx.toFixed(2));
+    txt.setAttribute('y', (ly + 4).toFixed(2));
+    const inRed   = k >= 130;
+    const inAmber = k >= 80 && k < 130;
+    txt.setAttribute('fill',
+      inRed ? 'rgba(255,80,80,0.75)' : inAmber ? 'rgba(255,176,32,0.7)' : 'rgba(200,212,222,0.65)');
+    txt.textContent = k;
+    lG.appendChild(txt);
   }
+
+  // Expose CSS vars for boot animation
+  document.getElementById('needle-grp').style.setProperty('--a-start', kmhDeg(0)+'deg');
+  document.getElementById('needle-grp').style.setProperty('--a-end',   kmhDeg(200)+'deg');
 }
 
 function setNeedle(kmh) {
-  const deg = kmhToDeg(Math.max(0, Math.min(200, kmh)));
+  const deg = kmhDeg(Math.max(0, Math.min(200, kmh)));
   $needle.style.transform = `rotate(${deg}deg)`;
-  $needle.style.transition = 'transform 150ms ease-out';
+  if (kmh > 0) {
+    $arcLive.setAttribute('d', arcD(R_LIVE, kmhDeg(0), kmhDeg(kmh)));
+    $arcLive.style.opacity = '1';
+  } else {
+    $arcLive.style.opacity = '0';
+  }
 }
 
-// === UNIT CONVERSIONS ===
-function kmhToSmoot(kmh) { return kmh * 1000 / SMOOT; }
+// ═══ SPEED UPDATE ═══
+function kmhToSmoot(k) { return k * 1000 / SMOOT; }
 
-// === HAVERSINE DISTANCE ===
-function haversineKm(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) ** 2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// === UI UPDATES ===
 function updateSpeed(kmh) {
-  const s = kmh.toFixed(1);
-  const sm = kmhToSmoot(kmh).toFixed(1);
-  $kmhDisp.textContent = s;
-  $smootVal.textContent = sm;
-  $smootVal.classList.toggle('speeding', kmh >= 130);
+  currentKmh = kmh;
+  const sm = kmhToSmoot(kmh);
+  $smootNum.textContent = sm.toFixed(1);
+  $kmhNum.textContent   = kmh.toFixed(1);
+
+  $smootNum.classList.remove('warn','danger');
+  if      (kmh >= 130) $smootNum.classList.add('danger');
+  else if (kmh >= 80)  $smootNum.classList.add('warn');
+
   setNeedle(kmh);
 
   if (kmh > maxKmh) {
     maxKmh = kmh;
-    $maxKmh.textContent = maxKmh.toFixed(1);
-    $maxSmoot.textContent = kmhToSmoot(maxKmh).toFixed(1) + ' sm/h';
+    $sMaxSm.textContent = kmhToSmoot(maxKmh).toFixed(1);
+    $sMaxKm.textContent = maxKmh.toFixed(1) + ' km/h';
   }
 }
 
-function updateAccuracy(acc) {
-  if (acc === null) {
-    $accDot.className = ''; $accText.textContent = 'ACQUIRING GPS'; return;
+// ═══ GEOLOCATION ═══
+function haversineKm(la1,lo1,la2,lo2) {
+  const R=6371, dLa=(la2-la1)*Math.PI/180, dLo=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function onPos(pos) {
+  $geoErr.style.display = 'none';
+  const {latitude:lat, longitude:lon, speed, accuracy} = pos.coords;
+  const kmh = (speed !== null && speed >= 0) ? speed * 3.6 : 0;
+
+  $sAcc.textContent = accuracy !== null ? Math.round(accuracy) : '--';
+  if      (accuracy < 10) { $gpsDot.className='ok';   $gpsText.textContent='GPS ±'+Math.round(accuracy)+'m'; }
+  else if (accuracy < 30) { $gpsDot.className='warn';  $gpsText.textContent='GPS ±'+Math.round(accuracy)+'m'; }
+  else                    { $gpsDot.className='bad';   $gpsText.textContent='GPS WEAK'; }
+
+  if (lastLL) {
+    const d = haversineKm(lastLL[0],lastLL[1],lat,lon);
+    if (d > 0.002) { totalDist += d; $sDist.textContent = totalDist.toFixed(2); }
   }
-  $accText.textContent = 'GPS ±' + Math.round(acc) + 'm';
-  if (acc < 10) { $accDot.className = 'ok'; }
-  else if (acc < 30) { $accDot.className = 'warn'; }
-  else { $accDot.className = 'bad'; }
-}
-
-function showToast(msg, type = '') {
-  $toast.textContent = msg;
-  $toast.className = 'show ' + type;
-  clearTimeout($toast._t);
-  $toast._t = setTimeout(() => { $toast.className = ''; }, 2800);
-}
-
-function padZ(n) { return String(n).padStart(2, '0'); }
-
-function formatElapsed(ms) {
-  const s = Math.floor(ms / 1000);
-  return padZ(Math.floor(s / 3600)) + ':' + padZ(Math.floor((s % 3600) / 60)) + ':' + padZ(s % 60);
-}
-
-function tickClock() {
-  const d = new Date();
-  $clock.textContent = padZ(d.getHours()) + ':' + padZ(d.getMinutes());
-}
-
-// === GEOLOCATION ===
-function startGeo() {
-  if (!navigator.geolocation) {
-    showGeoError('Geolocation is not supported by this browser.');
-    return;
-  }
-  watchId = navigator.geolocation.watchPosition(onPosition, onGeoError, {
-    enableHighAccuracy: true, timeout: 10000, maximumAge: 0
-  });
-}
-
-function onPosition(pos) {
-  $geoError.style.display = 'none';
-  const { latitude: lat, longitude: lon, altitude, speed, accuracy } = pos.coords;
-  const kmh = speed !== null && speed >= 0 ? speed * 3.6 : 0;
-  const ts = new Date(pos.timestamp).toISOString();
-
-  updateAccuracy(accuracy);
+  lastLL = [lat, lon];
   updateSpeed(kmh);
-
-  if (lastLatLon) {
-    const d = haversineKm(lastLatLon[0], lastLatLon[1], lat, lon);
-    if (d > 0.002) { totalDist += d; }
-  }
-  lastLatLon = [lat, lon];
-  $distVal.textContent = totalDist.toFixed(2);
-
-  if (recording) {
-    trackPoints.push({ lat, lon, ele: altitude ?? 0, ts, kmh });
-    $recPts.textContent = trackPoints.length + ' pts';
-  }
 }
 
-function onGeoError(err) {
-  const msgs = {
-    1: 'Location access denied. Enable it in Settings > Privacy > Location Services.',
-    2: 'Position unavailable. Move to an open area.',
-    3: 'GPS timed out. Retrying…'
-  };
-  showGeoError(msgs[err.code] || 'Unknown GPS error.');
-  updateAccuracy(null);
+function onGeoErr(e) {
+  const m = {1:'LOCATION ACCESS DENIED — CHECK SETTINGS', 2:'POSITION UNAVAILABLE', 3:'GPS TIMEOUT'};
+  $geoErr.textContent = m[e.code] || 'GPS ERROR';
+  $geoErr.style.display = 'block';
+  $gpsDot.className = 'bad'; $gpsText.textContent = 'NO GPS';
 }
 
-function showGeoError(msg) {
-  $geoError.textContent = msg;
-  $geoError.style.display = 'block';
+function startGeo() {
+  if (!navigator.geolocation) { onGeoErr({code:2}); return; }
+  navigator.geolocation.watchPosition(onPos, onGeoErr,
+    {enableHighAccuracy:true, timeout:10000, maximumAge:0});
 }
 
-// === RECORDING CONTROLS ===
-function startRecording() {
-  recording = true;
-  trackPoints = [];
-  recStartTime = Date.now();
-  $recStrip.classList.add('active');
-  $recInd.classList.add('active');
-  $btnRecord.disabled = true;
-  $btnExport.disabled = false;
-  recTimerInterval = setInterval(() => {
-    $recTime.textContent = formatElapsed(Date.now() - recStartTime);
-  }, 1000);
-  acquireWakeLock();
-  showToast('RECORDING STARTED', 'ok');
-}
-
-function stopRecording() {
-  recording = false;
-  clearInterval(recTimerInterval);
-  $recStrip.classList.remove('active');
-  $recInd.classList.remove('active');
-  $btnRecord.disabled = false;
-  $btnExport.disabled = true;
-  releaseWakeLock();
-}
-
-function resetSession() {
-  stopRecording();
-  trackPoints = [];
-  maxKmh = 0;
-  totalDist = 0;
-  lastLatLon = null;
-  $maxKmh.textContent = '0.0';
-  $maxSmoot.textContent = '0.0 sm/h';
-  $distVal.textContent = '0.00';
-  $recTime.textContent = '00:00:00';
-  $recPts.textContent = '0 pts';
-  updateSpeed(0);
-  showToast('SESSION RESET');
-}
-
-// === GPX EXPORT ===
-function exportGPX() {
-  if (trackPoints.length === 0) {
-    showToast('NO TRACK DATA', 'err'); return;
-  }
-  try {
-    stopRecording();
-    const now = new Date();
-    const stamp = now.toISOString().replace(/[-:]/g,'').replace(/\..+/,'');
-    const name = 'Track ' + now.toLocaleDateString();
-
-    const trkpts = trackPoints.map(p =>
-      `    <trkpt lat="${p.lat.toFixed(8)}" lon="${p.lon.toFixed(8)}">
-      <ele>${p.ele.toFixed(1)}</ele>
-      <time>${p.ts}</time>
-      <extensions><speed>${p.kmh.toFixed(2)}</speed></extensions>
-    </trkpt>`
-    ).join('\n');
-
-    const gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="Speedometer iOS App"
-  xmlns="http://www.topografix.com/GPX/1/1"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
-  <metadata>
-    <name>${name}</name>
-    <time>${now.toISOString()}</time>
-    <desc>Recorded by Speedometer — ${trackPoints.length} points</desc>
-  </metadata>
-  <trk>
-    <name>${name}</name>
-    <trkseg>
-${trkpts}
-    </trkseg>
-  </trk>
-</gpx>`;
-
-    const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = 'track_' + stamp + '.gpx';
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 3000);
-    showToast('GPX EXPORTED · ' + trackPoints.length + ' PTS', 'ok');
-  } catch(e) {
-    showToast('EXPORT FAILED', 'err');
-  }
-}
-
-// === WAKE LOCK ===
+// ═══ WAKE LOCK ═══
 async function acquireWakeLock() {
   if ('wakeLock' in navigator) {
     try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
   }
 }
-function releaseWakeLock() {
-  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) acquireWakeLock();
+});
+
+// ═══ CLOCK ═══
+function tickClock() {
+  const d = new Date();
+  $clock.textContent = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 }
 
-// === BOOT SEQUENCE ===
-function bootNeedleSweep() {
-  const wrap = document.getElementById('gauge-wrap');
-  wrap.classList.add('booting');
-  setTimeout(() => wrap.classList.remove('booting'), 1000);
+// ═══ LFA BOOT SWEEP ═══
+function lfaBootSweep() {
+  const w = document.getElementById('gauge-wrap');
+  w.classList.add('lfa-booting');
+  setTimeout(() => w.classList.remove('lfa-booting'), 1700);
 }
 
-// === INIT ===
+// ═══ INIT ═══
+resize();
+window.addEventListener('resize', () => { resize(); initStars(); });
+initStars();
 buildGauge();
 updateSpeed(0);
+requestAnimationFrame(drawStars);
+tickClock();
+setInterval(tickClock, 15000);
 
 $splashBtn.addEventListener('click', () => {
   $splash.style.display = 'none';
   $app.style.display = 'flex';
-  bootNeedleSweep();
+  lfaBootSweep();
   startGeo();
-  tickClock();
-  clockInterval = setInterval(tickClock, 15000);
-});
-
-$btnRecord.addEventListener('click', startRecording);
-$btnExport.addEventListener('click', exportGPX);
-$btnReset.addEventListener('click', () => {
-  if (trackPoints.length > 0 && recording) {
-    if (!confirm('Stop recording and reset?')) return;
-  }
-  resetSession();
-});
-
-// Re-acquire wake lock if released (iOS background/foreground)
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && recording) acquireWakeLock();
+  acquireWakeLock();
 });
 </script>
 </body>
