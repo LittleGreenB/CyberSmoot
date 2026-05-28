@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="LFA SPEEDO">
+<meta name="apple-mobile-web-app-title" content="SMOOT SPEEDO">
 <title>CyberSmoot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -184,7 +184,25 @@ html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--tex
   margin-top:1px; letter-spacing:1px;
 }
 
-/* ─── GEO ERROR ─── */
+/* ─── UNIT TOGGLE ─── */
+#unit-toggle {
+  margin-top:14px;
+  padding:8px 28px;
+  background:transparent;
+  border:1px solid rgba(200,212,222,0.2);
+  color:var(--silver2);
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px; font-weight:400; letter-spacing:5px;
+  text-transform:uppercase; cursor:pointer;
+  transition:border-color 0.25s, color 0.25s, background 0.25s;
+}
+#unit-toggle:active,
+#unit-toggle.active {
+  background:rgba(74,168,255,0.12);
+  border-color:var(--blue);
+  color:var(--blue);
+}
+
 #geo-error {
   display:none; width:100%; padding:8px 20px; text-align:center;
   font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:1px;
@@ -356,13 +374,14 @@ html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--tex
     <!-- ═══ READOUTS BELOW GAUGE ═══ -->
     <div id="readouts">
       <div id="smoot-num">0.0</div>
-      <div id="smoot-label">SMOOTS / H</div>
+      <div id="smoot-label">SMOOTS / S</div>
       <div id="rule"></div>
       <div id="kmh-row">
         <div id="kmh-num">0.0</div>
         <div id="kmh-label">KM / H</div>
       </div>
       <div id="smoot-note">1 SMOOT = 1.7018 M &nbsp;·&nbsp; OLIVER SMOOT, MIT 1958</div>
+      <button id="unit-toggle">KM / H</button>
     </div>
 
     <!-- STATS -->
@@ -575,14 +594,37 @@ function setNeedle(kmh) {
   }
 }
 
+// ═══ UNIT MODE ═══
+let showKmh = false;
+const $unitToggle = document.getElementById('unit-toggle');
+const $smootLabel = document.getElementById('smoot-label');
+const $kmhLabel   = document.getElementById('kmh-label');
+
+$unitToggle.addEventListener('click', () => {
+  showKmh = !showKmh;
+  $unitToggle.textContent = showKmh ? 'SMOOTS / S' : 'KM / H';
+  $unitToggle.classList.toggle('active', showKmh);
+  updateSpeed(currentKmh);
+});
+
 // ═══ SPEED UPDATE ═══
-function kmhToSmoot(k) { return k * 1000 / SMOOT; }
+function kmhToSmootPerSec(k) { return k * 1000 / 3600 / SMOOT; }
 
 function updateSpeed(kmh) {
   currentKmh = kmh;
-  const sm = kmhToSmoot(kmh);
-  $smootNum.textContent = sm.toFixed(1);
-  $kmhNum.textContent   = kmh.toFixed(1);
+  const sm = kmhToSmootPerSec(kmh);
+
+  if (showKmh) {
+    $smootNum.textContent  = kmh.toFixed(1);
+    $smootLabel.textContent = 'KM / H';
+    $kmhNum.textContent    = sm.toFixed(2);
+    $kmhLabel.textContent  = 'SMOOTS / S';
+  } else {
+    $smootNum.textContent  = sm.toFixed(2);
+    $smootLabel.textContent = 'SMOOTS / S';
+    $kmhNum.textContent    = kmh.toFixed(1);
+    $kmhLabel.textContent  = 'KM / H';
+  }
 
   $smootNum.classList.remove('warn','danger');
   if      (kmh >= 130) $smootNum.classList.add('danger');
@@ -592,7 +634,7 @@ function updateSpeed(kmh) {
 
   if (kmh > maxKmh) {
     maxKmh = kmh;
-    $sMaxSm.textContent = kmhToSmoot(maxKmh).toFixed(1);
+    $sMaxSm.textContent = kmhToSmootPerSec(maxKmh).toFixed(2);
     $sMaxKm.textContent = maxKmh.toFixed(1) + ' km/h';
   }
 }
