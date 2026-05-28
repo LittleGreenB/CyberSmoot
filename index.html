@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Speedometer">
+<title>Speedometer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b11;
+    --surface: #0e1420;
+    --surface2: #141b28;
+    --accent: #f5a623;
+    --accent2: #00e5cc;
+    --danger: #ff3b55;
+    --ok: #34d058;
+    --warn: #f5a623;
+    --text: #dce4f0;
+    --muted: #4a5568;
+    --border: #1e2a3a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; }
+
+  /* === SPLASH === */
+  #splash {
+    position: fixed; inset: 0; z-index: 100;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+  }
+  #splash h1 { font-size: 36px; font-weight: 700; letter-spacing: 6px; color: var(--accent); text-transform: uppercase; }
+  #splash p { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--muted); letter-spacing: 2px; text-align: center; line-height: 1.8; }
+  #splash-btn {
+    margin-top: 12px; padding: 14px 40px;
+    background: transparent; border: 1.5px solid var(--accent);
+    color: var(--accent); font-family: 'Rajdhani', sans-serif;
+    font-size: 18px; font-weight: 600; letter-spacing: 4px;
+    cursor: pointer; text-transform: uppercase;
+    transition: background 0.2s, color 0.2s;
+  }
+  #splash-btn:active { background: var(--accent); color: var(--bg); transform: scale(0.97); }
+
+  /* === MAIN APP === */
+  #app {
+    display: none; flex-direction: column; align-items: center;
+    height: 100%; overflow-y: auto; padding: env(safe-area-inset-top, 20px) 0 env(safe-area-inset-bottom, 20px);
+  }
+
+  /* === STATUS BAR === */
+  #status-bar {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px; font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    color: var(--muted); letter-spacing: 1px;
+  }
+  #status-bar .gps-row { display: flex; align-items: center; gap: 8px; }
+  #acc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.4s; }
+  #acc-dot.ok { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+  #acc-dot.warn { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+  #acc-dot.bad { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+  #rec-indicator { display: flex; align-items: center; gap: 6px; opacity: 0; transition: opacity 0.3s; }
+  #rec-indicator.active { opacity: 1; }
+  #rec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: pulse-rec 1.2s ease-in-out infinite; }
+  @keyframes pulse-rec { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  /* === GAUGE === */
+  #gauge-wrap { position: relative; width: min(88vw, 340px); margin: 4px 0 0; }
+  #gauge-svg { width: 100%; height: auto; overflow: visible; }
+
+  /* === SCANLINES === */
+  #gauge-wrap::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 50%;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
+    z-index: 2;
+  }
+
+  /* === SPEED READOUTS === */
+  #readouts { text-align: center; width: 100%; padding: 0 20px; margin-top: -8px; }
+  #smoot-val {
+    font-size: clamp(64px, 18vw, 88px); font-weight: 700;
+    color: var(--accent2); line-height: 1; letter-spacing: -2px;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.3s;
+  }
+  #smoot-val.speeding { color: var(--danger); }
+  #smoot-unit { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--muted); letter-spacing: 3px; margin-top: 2px; }
+  #smoot-note { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 3px; text-align: center; }
+  #kmh-row {
+    margin-top: 12px; display: flex; align-items: baseline; justify-content: center; gap: 8px;
+  }
+  #kmh-display { font-size: 28px; font-weight: 600; color: var(--text); letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+  #kmh-unit { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; }
+
+  /* === STATS ROW === */
+  #stats-row {
+    display: flex; gap: 12px; width: 100%; padding: 14px 20px 10px; justify-content: center;
+  }
+  .stat-card {
+    flex: 1; max-width: 160px; background: var(--surface); border: 1px solid var(--border);
+    padding: 10px 12px; text-align: center;
+  }
+  .stat-label { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  .stat-val { font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+  .stat-sub { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--accent2); margin-top: 1px; }
+
+  /* === RECORDING STRIP === */
+  #rec-strip {
+    width: 100%; padding: 8px 20px;
+    background: rgba(255,59,85,0.08); border-top: 1px solid rgba(255,59,85,0.2); border-bottom: 1px solid rgba(255,59,85,0.2);
+    display: none; align-items: center; justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--danger);
+    letter-spacing: 1px;
+  }
+  #rec-strip.active { display: flex; }
+
+  /* === BUTTONS === */
+  #controls { display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 10px 20px 6px; }
+  .btn {
+    width: 100%; padding: 16px; font-family: 'Rajdhani', sans-serif;
+    font-size: 17px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
+    border: 1.5px solid var(--border); background: var(--surface); color: var(--text);
+    cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { border-color: var(--accent); color: var(--accent); }
+  .btn-primary:active { background: var(--accent); color: var(--bg); }
+  .btn-danger { border-color: var(--danger); color: var(--danger); }
+  .btn-danger:active { background: var(--danger); color: var(--bg); }
+  .btn-reset { border-color: var(--muted); color: var(--muted); font-size: 14px; padding: 12px; }
+  .btn-reset:active { background: var(--surface2); }
+  .btn:disabled { opacity: 0.35; pointer-events: none; }
+
+  /* === TOAST === */
+  #toast {
+    position: fixed; bottom: calc(env(safe-area-inset-bottom, 20px) + 20px);
+    left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'Share Tech Mono', monospace;
+    font-size: 12px; letter-spacing: 1px;
+    padding: 10px 20px; white-space: nowrap;
+    transition: transform 0.3s ease; z-index: 50;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.ok { border-color: var(--ok); color: var(--ok); }
+  #toast.err { border-color: var(--danger); color: var(--danger); }
+
+  /* === ERROR === */
+  #geo-error {
+    width: 100%; padding: 14px 20px; margin: 4px 0;
+    background: rgba(255,59,85,0.08); border-top: 1px solid rgba(255,59,85,0.3);
+    font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    color: var(--danger); line-height: 1.7; text-align: center; display: none;
+  }
+
+  /* === BOOT ANIMATION === */
+  @keyframes boot-needle { 0%{transform:rotate(-130deg)} 50%{transform:rotate(0deg)} 100%{transform:rotate(-130deg)} }
+  .booting #needle-group { animation: boot-needle 0.9s ease-in-out forwards; }
+</style>
+</head>
+<body>
+
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+    <circle cx="30" cy="30" r="28" stroke="#f5a623" stroke-width="1.5" opacity="0.4"/>
+    <circle cx="30" cy="30" r="20" stroke="#f5a623" stroke-width="1"/>
+    <line x1="30" y1="30" x2="30" y2="12" stroke="#f5a623" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="30" cy="30" r="3" fill="#f5a623"/>
+  </svg>
+  <h1>Speedo</h1>
+  <p>GPS SPEEDOMETER</p>
+  <button id="splash-btn">INITIALISE</button>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+
+  <!-- STATUS BAR -->
+  <div id="status-bar">
+    <div class="gps-row">
+      <div id="acc-dot"></div>
+      <span id="acc-text">ACQUIRING GPS</span>
+    </div>
+    <div id="rec-indicator">
+      <div id="rec-dot"></div>
+      <span>REC</span>
+    </div>
+    <span id="clock">--:--</span>
+  </div>
+
+  <!-- GAUGE -->
+  <div id="gauge-wrap">
+    <svg id="gauge-svg" viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- ARC ZONES: green 0-80, amber 80-130, red 130-200 -->
+      <!-- 0 km/h = -130deg, 200 km/h = +130deg; total span 260deg -->
+      <!-- green: -130 to -26 (80/200*260-130) -->
+      <!-- amber: -26 to +39 (130/200*260-130) -->
+      <!-- red: +39 to +130 -->
+      <path id="arc-green" fill="none" stroke="#34d058" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+      <path id="arc-amber" fill="none" stroke="#f5a623" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+      <path id="arc-red"   fill="none" stroke="#ff3b55" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+
+      <!-- TICK MARKS -->
+      <g id="ticks"></g>
+
+      <!-- NEEDLE GROUP (rotates around cx=170,cy=170) -->
+      <g id="needle-group" style="transform-origin:170px 170px; transform:rotate(-130deg)">
+        <!-- needle -->
+        <line x1="170" y1="170" x2="170" y2="60" stroke="#f5a623" stroke-width="2.5" stroke-linecap="round" filter="url(#glow)"/>
+        <!-- hub -->
+        <circle cx="170" cy="170" r="8" fill="#0e1420" stroke="#f5a623" stroke-width="1.5"/>
+        <circle cx="170" cy="170" r="3" fill="#f5a623"/>
+      </g>
+
+      <!-- SPEED LABEL MARKS (0,20,40...200) -->
+      <g id="speed-labels" font-family="'Share Tech Mono',monospace" font-size="10" fill="#4a5568" text-anchor="middle"></g>
+
+      <!-- INNER CIRCLE decoration -->
+      <circle cx="170" cy="170" r="50" fill="none" stroke="#1e2a3a" stroke-width="0.5"/>
+    </svg>
+  </div>
+
+  <!-- SPEED READOUTS -->
+  <div id="readouts">
+    <div id="smoot-val">0.0</div>
+    <div id="smoot-unit">SMOOTS / H</div>
+    <div id="kmh-row">
+      <div id="kmh-display">0.0</div>
+      <div id="kmh-unit">KM / H</div>
+    </div>
+    <div id="smoot-note">1 smoot = 1.7018 m &nbsp;·&nbsp; Oliver Smoot, MIT 1958</div>
+  </div>
+
+  <!-- STATS -->
+  <div id="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">MAX SPEED</div>
+      <div class="stat-val" id="max-kmh">0.0</div>
+      <div class="stat-sub" id="max-smoot">0.0 sm/h</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">DISTANCE</div>
+      <div class="stat-val" id="dist-val">0.00</div>
+      <div class="stat-sub">KM</div>
+    </div>
+  </div>
+
+  <!-- GPS ERROR -->
+  <div id="geo-error"></div>
+
+  <!-- RECORDING STRIP -->
+  <div id="rec-strip">
+    <span>● RECORDING</span>
+    <span id="rec-time">00:00:00</span>
+    <span id="rec-pts">0 pts</span>
+  </div>
+
+  <!-- CONTROLS -->
+  <div id="controls">
+    <button class="btn btn-primary" id="btn-record">START RECORDING</button>
+    <button class="btn btn-danger"  id="btn-export" disabled>STOP &amp; EXPORT GPX</button>
+    <button class="btn btn-reset"   id="btn-reset">RESET SESSION</button>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// === CONSTANTS ===
+const SMOOT = 1.7018;       // metres per smoot
+const CX = 170, CY = 170;  // gauge centre
+const R_ARC = 145;          // arc radius
+const R_TICK_OUT = 135;
+const R_TICK_IN_MAJ = 120;
+const R_TICK_IN_MIN = 127;
+const R_LABEL = 108;
+const ARC_START_DEG = -130; // 0 km/h
+const ARC_TOTAL = 260;      // degrees for 200 km/h
+
+// === STATE ===
+let watchId = null;
+let recording = false;
+let trackPoints = [];
+let maxKmh = 0;
+let totalDist = 0;
+let lastLatLon = null;
+let recStartTime = null;
+let recTimerInterval = null;
+let wakeLock = null;
+let clockInterval = null;
+
+// === ELEMENTS ===
+const $splash    = document.getElementById('splash');
+const $app       = document.getElementById('app');
+const $splashBtn = document.getElementById('splash-btn');
+const $accDot    = document.getElementById('acc-dot');
+const $accText   = document.getElementById('acc-text');
+const $recInd    = document.getElementById('rec-indicator');
+const $clock     = document.getElementById('clock');
+const $needle    = document.getElementById('needle-group');
+const $kmhDisp   = document.getElementById('kmh-display');
+const $smootVal  = document.getElementById('smoot-val');
+const $maxKmh    = document.getElementById('max-kmh');
+const $maxSmoot  = document.getElementById('max-smoot');
+const $distVal   = document.getElementById('dist-val');
+const $geoError  = document.getElementById('geo-error');
+const $recStrip  = document.getElementById('rec-strip');
+const $recTime   = document.getElementById('rec-time');
+const $recPts    = document.getElementById('rec-pts');
+const $btnRecord = document.getElementById('btn-record');
+const $btnExport = document.getElementById('btn-export');
+const $btnReset  = document.getElementById('btn-reset');
+const $toast     = document.getElementById('toast');
+
+// === GAUGE DRAWING ===
+function degToRad(d) { return d * Math.PI / 180; }
+
+function arcPoint(cx, cy, r, deg) {
+  const a = degToRad(deg - 90);
+  return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+}
+
+function describeArc(cx, cy, r, startDeg, endDeg) {
+  const [sx, sy] = arcPoint(cx, cy, r, startDeg);
+  const [ex, ey] = arcPoint(cx, cy, r, endDeg);
+  const large = (endDeg - startDeg) > 180 ? 1 : 0;
+  return `M ${sx} ${sy} A ${r} ${r} 0 ${large} 1 ${ex} ${ey}`;
+}
+
+function kmhToDeg(kmh) {
+  return ARC_START_DEG + (Math.min(kmh, 200) / 200) * ARC_TOTAL;
+}
+
+function buildGauge() {
+  // Colour arcs
+  document.getElementById('arc-green').setAttribute('d', describeArc(CX, CY, R_ARC, ARC_START_DEG, kmhToDeg(80)));
+  document.getElementById('arc-amber').setAttribute('d', describeArc(CX, CY, R_ARC, kmhToDeg(80), kmhToDeg(130)));
+  document.getElementById('arc-red'  ).setAttribute('d', describeArc(CX, CY, R_ARC, kmhToDeg(130), kmhToDeg(200)));
+
+  // Ticks
+  const ticksG = document.getElementById('ticks');
+  for (let kmh = 0; kmh <= 200; kmh += 5) {
+    const deg = kmhToDeg(kmh);
+    const isMaj = kmh % 20 === 0;
+    const rIn = isMaj ? R_TICK_IN_MAJ : R_TICK_IN_MIN;
+    const [x1, y1] = arcPoint(CX, CY, R_TICK_OUT, deg);
+    const [x2, y2] = arcPoint(CX, CY, rIn, deg);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', isMaj ? '#2a3a52' : '#1a2535');
+    line.setAttribute('stroke-width', isMaj ? '1.5' : '0.8');
+    ticksG.appendChild(line);
+  }
+
+  // Labels
+  const labG = document.getElementById('speed-labels');
+  for (let kmh = 0; kmh <= 200; kmh += 20) {
+    const deg = kmhToDeg(kmh);
+    const [lx, ly] = arcPoint(CX, CY, R_LABEL, deg);
+    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    txt.setAttribute('x', lx); txt.setAttribute('y', ly + 3.5);
+    txt.textContent = kmh;
+    labG.appendChild(txt);
+  }
+}
+
+function setNeedle(kmh) {
+  const deg = kmhToDeg(Math.max(0, Math.min(200, kmh)));
+  $needle.style.transform = `rotate(${deg}deg)`;
+  $needle.style.transition = 'transform 150ms ease-out';
+}
+
+// === UNIT CONVERSIONS ===
+function kmhToSmoot(kmh) { return kmh * 1000 / SMOOT; }
+
+// === HAVERSINE DISTANCE ===
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) ** 2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// === UI UPDATES ===
+function updateSpeed(kmh) {
+  const s = kmh.toFixed(1);
+  const sm = kmhToSmoot(kmh).toFixed(1);
+  $kmhDisp.textContent = s;
+  $smootVal.textContent = sm;
+  $smootVal.classList.toggle('speeding', kmh >= 130);
+  setNeedle(kmh);
+
+  if (kmh > maxKmh) {
+    maxKmh = kmh;
+    $maxKmh.textContent = maxKmh.toFixed(1);
+    $maxSmoot.textContent = kmhToSmoot(maxKmh).toFixed(1) + ' sm/h';
+  }
+}
+
+function updateAccuracy(acc) {
+  if (acc === null) {
+    $accDot.className = ''; $accText.textContent = 'ACQUIRING GPS'; return;
+  }
+  $accText.textContent = 'GPS ±' + Math.round(acc) + 'm';
+  if (acc < 10) { $accDot.className = 'ok'; }
+  else if (acc < 30) { $accDot.className = 'warn'; }
+  else { $accDot.className = 'bad'; }
+}
+
+function showToast(msg, type = '') {
+  $toast.textContent = msg;
+  $toast.className = 'show ' + type;
+  clearTimeout($toast._t);
+  $toast._t = setTimeout(() => { $toast.className = ''; }, 2800);
+}
+
+function padZ(n) { return String(n).padStart(2, '0'); }
+
+function formatElapsed(ms) {
+  const s = Math.floor(ms / 1000);
+  return padZ(Math.floor(s / 3600)) + ':' + padZ(Math.floor((s % 3600) / 60)) + ':' + padZ(s % 60);
+}
+
+function tickClock() {
+  const d = new Date();
+  $clock.textContent = padZ(d.getHours()) + ':' + padZ(d.getMinutes());
+}
+
+// === GEOLOCATION ===
+function startGeo() {
+  if (!navigator.geolocation) {
+    showGeoError('Geolocation is not supported by this browser.');
+    return;
+  }
+  watchId = navigator.geolocation.watchPosition(onPosition, onGeoError, {
+    enableHighAccuracy: true, timeout: 10000, maximumAge: 0
+  });
+}
+
+function onPosition(pos) {
+  $geoError.style.display = 'none';
+  const { latitude: lat, longitude: lon, altitude, speed, accuracy } = pos.coords;
+  const kmh = speed !== null && speed >= 0 ? speed * 3.6 : 0;
+  const ts = new Date(pos.timestamp).toISOString();
+
+  updateAccuracy(accuracy);
+  updateSpeed(kmh);
+
+  if (lastLatLon) {
+    const d = haversineKm(lastLatLon[0], lastLatLon[1], lat, lon);
+    if (d > 0.002) { totalDist += d; }
+  }
+  lastLatLon = [lat, lon];
+  $distVal.textContent = totalDist.toFixed(2);
+
+  if (recording) {
+    trackPoints.push({ lat, lon, ele: altitude ?? 0, ts, kmh });
+    $recPts.textContent = trackPoints.length + ' pts';
+  }
+}
+
+function onGeoError(err) {
+  const msgs = {
+    1: 'Location access denied. Enable it in Settings > Privacy > Location Services.',
+    2: 'Position unavailable. Move to an open area.',
+    3: 'GPS timed out. Retrying…'
+  };
+  showGeoError(msgs[err.code] || 'Unknown GPS error.');
+  updateAccuracy(null);
+}
+
+function showGeoError(msg) {
+  $geoError.textContent = msg;
+  $geoError.style.display = 'block';
+}
+
+// === RECORDING CONTROLS ===
+function startRecording() {
+  recording = true;
+  trackPoints = [];
+  recStartTime = Date.now();
+  $recStrip.classList.add('active');
+  $recInd.classList.add('active');
+  $btnRecord.disabled = true;
+  $btnExport.disabled = false;
+  recTimerInterval = setInterval(() => {
+    $recTime.textContent = formatElapsed(Date.now() - recStartTime);
+  }, 1000);
+  acquireWakeLock();
+  showToast('RECORDING STARTED', 'ok');
+}
+
+function stopRecording() {
+  recording = false;
+  clearInterval(recTimerInterval);
+  $recStrip.classList.remove('active');
+  $recInd.classList.remove('active');
+  $btnRecord.disabled = false;
+  $btnExport.disabled = true;
+  releaseWakeLock();
+}
+
+function resetSession() {
+  stopRecording();
+  trackPoints = [];
+  maxKmh = 0;
+  totalDist = 0;
+  lastLatLon = null;
+  $maxKmh.textContent = '0.0';
+  $maxSmoot.textContent = '0.0 sm/h';
+  $distVal.textContent = '0.00';
+  $recTime.textContent = '00:00:00';
+  $recPts.textContent = '0 pts';
+  updateSpeed(0);
+  showToast('SESSION RESET');
+}
+
+// === GPX EXPORT ===
+function exportGPX() {
+  if (trackPoints.length === 0) {
+    showToast('NO TRACK DATA', 'err'); return;
+  }
+  try {
+    stopRecording();
+    const now = new Date();
+    const stamp = now.toISOString().replace(/[-:]/g,'').replace(/\..+/,'');
+    const name = 'Track ' + now.toLocaleDateString();
+
+    const trkpts = trackPoints.map(p =>
+      `    <trkpt lat="${p.lat.toFixed(8)}" lon="${p.lon.toFixed(8)}">
+      <ele>${p.ele.toFixed(1)}</ele>
+      <time>${p.ts}</time>
+      <extensions><speed>${p.kmh.toFixed(2)}</speed></extensions>
+    </trkpt>`
+    ).join('\n');
+
+    const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Speedometer iOS App"
+  xmlns="http://www.topografix.com/GPX/1/1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
+  <metadata>
+    <name>${name}</name>
+    <time>${now.toISOString()}</time>
+    <desc>Recorded by Speedometer — ${trackPoints.length} points</desc>
+  </metadata>
+  <trk>
+    <name>${name}</name>
+    <trkseg>
+${trkpts}
+    </trkseg>
+  </trk>
+</gpx>`;
+
+    const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'track_' + stamp + '.gpx';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    showToast('GPX EXPORTED · ' + trackPoints.length + ' PTS', 'ok');
+  } catch(e) {
+    showToast('EXPORT FAILED', 'err');
+  }
+}
+
+// === WAKE LOCK ===
+async function acquireWakeLock() {
+  if ('wakeLock' in navigator) {
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+  }
+}
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+
+// === BOOT SEQUENCE ===
+function bootNeedleSweep() {
+  const wrap = document.getElementById('gauge-wrap');
+  wrap.classList.add('booting');
+  setTimeout(() => wrap.classList.remove('booting'), 1000);
+}
+
+// === INIT ===
+buildGauge();
+updateSpeed(0);
+
+$splashBtn.addEventListener('click', () => {
+  $splash.style.display = 'none';
+  $app.style.display = 'flex';
+  bootNeedleSweep();
+  startGeo();
+  tickClock();
+  clockInterval = setInterval(tickClock, 15000);
+});
+
+$btnRecord.addEventListener('click', startRecording);
+$btnExport.addEventListener('click', exportGPX);
+$btnReset.addEventListener('click', () => {
+  if (trackPoints.length > 0 && recording) {
+    if (!confirm('Stop recording and reset?')) return;
+  }
+  resetSession();
+});
+
+// Re-acquire wake lock if released (iOS background/foreground)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && recording) acquireWakeLock();
+});
+</script>
+</body>
+</html>
