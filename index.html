@@ -123,7 +123,7 @@
       <!-- Filled progress arc -->
       <path id="progress-arc" d="" fill="none" stroke-width="3" stroke-linecap="round"/>
 
-      <!-- Redline arc segment (9-10 zone) -->
+      <!-- Redline arc segment (110 zone) -->
       <path id="redline-arc" d="" fill="none" stroke="#cc2200" stroke-width="5" opacity="0.85"/>
 
       <!-- Tick marks -->
@@ -132,16 +132,16 @@
       <!-- RPM labels -->
       <g id="labels"></g>
 
-      <!-- Decorative inner arc lines (like Huracan STO inner detail) -->
+      <!-- Decorative inner arc lines -->
       <path id="inner-detail" d="" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
 
       <!-- Center digital readout -->
       <text id="digital-speed" x="350" y="220" text-anchor="middle" dominant-baseline="middle"
-        fill="#e84e00" font-size="110" font-family="'Arial Narrow', Arial, sans-serif"
+        fill="rgb(100,200,255)" font-size="110" font-family="'Arial Narrow', Arial, sans-serif"
         font-weight="700" font-style="italic" filter="url(#text-glow)" letter-spacing="-4">0</text>
 
       <!-- Smoot/H sub label -->
-      <text x="350" y="262" text-anchor="middle"
+      <text x="350" y="274" text-anchor="middle"
         fill="rgba(255,255,255,0.3)" font-size="13" font-family="Arial, sans-serif"
         letter-spacing="3" font-weight="300">SMOOT/H</text>
 
@@ -166,7 +166,7 @@ const R_OUTER = 290, R_INNER = 260, R_TICK_OUT = 270, R_TICK_IN = 250;
 const R_DOT = 285;
 const START_ANGLE = 210, END_ANGLE = 330; // degrees from right (0°)
 const MAX_RPM = 10;
-const MAX_SMOOT = 200;
+const MAX_SMOOT = 100;
 const SMOOT_PER_MS = 1 / 1676.4;
 
 function toRad(d) { return d * Math.PI / 180; }
@@ -186,7 +186,7 @@ function arcPath(r, startDeg, endDeg) {
 const totalSpan = (END_ANGLE - START_ANGLE + 360) % 360;
 
 function speedToAngle(smootH) {
-  const frac = Math.min(smootH / 200, 1);
+  const frac = Math.min(smootH / 100, 1);
   return START_ANGLE + frac * totalSpan;
 }
 
@@ -196,7 +196,7 @@ function rpmToAngle(rpm) {
 
 document.getElementById('track-bg').setAttribute('d', arcPath(R_OUTER, START_ANGLE, END_ANGLE));
 
-const redlineStart = rpmToAngle(9);
+const redlineStart = rpmToAngle(6.45);
 document.getElementById('redline-arc').setAttribute('d', arcPath(R_OUTER + 2, redlineStart, END_ANGLE));
 
 const dotTrack = document.getElementById('dot-track');
@@ -216,9 +216,9 @@ for (let i = 0; i <= numDots; i++) {
 const ticksG = document.getElementById('ticks');
 const labelsG = document.getElementById('labels');
 for (let step = 0; step <= 10; step++) {
-  const smootVal = step * 20;
+  const smootVal = step * 10;
   const angle = rpmToAngle(step);
-  const isRedline = smootVal >= 180;
+  const isRedline = smootVal >= 64.5;
   const outerP = polarToXY(R_TICK_OUT, angle);
   const innerP = polarToXY(isRedline ? R_TICK_IN - 6 : R_TICK_IN, angle);
   const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -247,7 +247,7 @@ for (let step = 0; step <= 10; step++) {
   text.setAttribute('text-anchor', 'middle');
   text.setAttribute('dominant-baseline', 'middle');
   text.setAttribute('fill', isRedline ? '#ff3300' : 'rgba(255,255,255,0.85)');
-  text.setAttribute('font-size', smootVal === 0 || smootVal === 200 ? '16' : '15');
+  text.setAttribute('font-size', smootVal === 0 || smootVal === 100 ? '16' : '15');
   text.setAttribute('font-family', 'Arial, sans-serif');
   text.setAttribute('font-weight', '400');
   text.textContent = smootVal;
@@ -260,14 +260,14 @@ let currentSmootH = 0, targetSmootH = 0;
 let currentAngle = START_ANGLE;
 
 function updateGauge(smootH) {
-  const clipped = Math.min(smootH, 200);
+  const clipped = Math.min(smootH, 100);
   const angle = speedToAngle(clipped);
 
   const progressArc = document.getElementById('progress-arc');
   if (clipped > 0) {
-    const isHot = clipped > 170;
+    const isHot = clipped > 85;
     progressArc.setAttribute('d', arcPath(R_OUTER, START_ANGLE, angle));
-    progressArc.setAttribute('stroke', isHot ? '#ff2200' : (clipped > 100 ? '#ff6600' : '#e8a000'));
+    progressArc.setAttribute('stroke', isHot ? '#ff2200' : (clipped > 50 ? '#ff6600' : '#e8a000'));
     progressArc.setAttribute('stroke-width', isHot ? '5' : '3');
     progressArc.setAttribute('filter', isHot ? 'url(#glow-red)' : 'url(#glow-orange)');
     progressArc.setAttribute('opacity', '1');
@@ -280,6 +280,21 @@ function updateGauge(smootH) {
   el.textContent = displayVal;
   const len = String(displayVal).length;
   el.setAttribute('font-size', len >= 4 ? '72' : len === 3 ? '88' : '110');
+
+  // Colour: light blue (0) → light red (64.5) → dark red (100)
+  let r, g, b;
+  if (clipped <= 64.5) {
+    const t = clipped / 64.5;
+    r = Math.round(100 + t * 155);
+    g = Math.round(200 - t * 90);
+    b = Math.round(255 - t * 145);
+  } else {
+    const t = (clipped - 64.5) / (100 - 64.5);
+    r = Math.round(255 - t * 100);
+    g = Math.round(110 - t * 110);
+    b = Math.round(110 - t * 110);
+  }
+  el.setAttribute('fill', `rgb(${r},${g},${b})`);
 
   document.getElementById('speed-label').textContent = Math.round(smootH * 1.7638);
 }
@@ -322,7 +337,7 @@ function drawStars() {
   ctx.fillStyle = '#000000';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  const speedFrac = Math.min(targetSmootH / 200, 1);
+  const speedFrac = Math.min(targetSmootH / 100, 1);
   const speed = 1 + speedFrac * 28;
   const cx = canvas.width / 2, cy = canvas.height / 2;
 
@@ -399,7 +414,7 @@ document.getElementById('debug-btn').addEventListener('click', () => {
     let t = 0;
     function simTick() {
       t += 0.008;
-      simSpeed = 100 + 90 * Math.sin(t) + 20 * Math.sin(t * 3.7);
+      simSpeed = 50 + 45 * Math.sin(t) + 10 * Math.sin(t * 3.7);
       simSpeed = Math.max(0, simSpeed);
       targetSmootH = simSpeed;
       if (simActive) simRAF = requestAnimationFrame(simTick);
